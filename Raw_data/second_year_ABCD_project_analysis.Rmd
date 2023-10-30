@@ -1,0 +1,95 @@
+---
+title: "Second_year_ABCD_project"
+output: html_document
+date: "2023-10-30"
+---
+
+```{r setup markdown file, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r setup, include=FALSE}
+
+## Avoid scientific notation ----
+options(scipen=999) ## forces full display of results, all digits
+
+## clean up the environment/remove old objects ----
+rm(list=ls()) 
+gc()
+
+## read in necessary libraries ----
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+
+## read in data ----
+life_youth <- read.csv("mh_y_le.csv",header=TRUE)
+cort_thick <- read.csv("mri_y_smr_thk_dsk.csv",header=TRUE)
+cort_vol <- read.csv("mri_y_smr_vol_dsk.csv",header=TRUE)
+subcort_vol <- read.csv("mri_y_smr_vol_aseg.csv",header=TRUE)
+mri_info <- read.csv("mri_y_adm_info.csv",header=TRUE)
+demo_info <- read.csv("abcd_p_demo.csv",header=TRUE)
+longitudinal_info <- read.csv("abcd_y_lt.csv", header=TRUE)
+
+## clean up youth-reported Life Events Scale data ----
+#subject id, event name, total number good events, total number bad events, how much affected, and how much affected by bad events will never be NA 
+life_youth <- filter(life_youth,rowSums(is.na(life_youth[,2:ncol(life_youth)]))!= ncol(life_youth)-6) 
+## add columns to add dataframes for combined subject and visit ID ----
+life_youth <- life_youth %>% mutate("subject_visit_id" =
+                                    paste0(life_youth$src_subject_id,"__",life_youth$eventname),
+                                    .after = eventname)
+cort_thick <- cort_thick %>% mutate("subject_visit_id" =
+                                    paste0(cort_thick$src_subject_id,"__",cort_thick$eventname),
+                                    .after = eventname)
+cort_vol <- cort_vol %>% mutate("subject_visit_id" =
+                                    paste0(cort_vol$src_subject_id,"__",cort_vol$eventname),
+                                    .after = eventname)
+subcort_vol <- subcort_vol %>% mutate("subject_visit_id" =
+                                    paste0(subcort_vol$src_subject_id,"__",subcort_vol$eventname),
+                                    .after = eventname)
+mri_info <- mri_info %>% mutate("subject_visit_id" =
+                                    paste0(mri_info$src_subject_id,"__",mri_info$eventname),
+                                    .after = eventname)
+demo_info <- demo_info %>% mutate("subject_visit_id" =
+                                    paste0(demo_info$src_subject_id,"__",demo_info$eventname),
+                                    .after = eventname)
+longitudinal_info <- longitudinal_info %>% mutate("subject_visit_id" =
+                                    paste0(longitudinal_info$src_subject_id,"__",
+                                           longitudinal_info$eventname),
+                                    .after = eventname)
+
+## create one data frame with all metdata, life events data, and structural mri data ----
+
+df_list <- list(life_youth,cort_thick,cort_vol,subcort_vol,mri_info,demo_info,longitudinal_info)
+alldata <- df_list %>% reduce(full_join, by='subject_visit_id')
+
+```
+
+```{r feasibility testing, include=FALSE}
+
+## feasibility based only on Life Events Scale ----
+# number of unique subjects with at least one time point
+length(unique(life_youth$src_subject_id))
+# note: Life Events Scale was not administered during baseline visit
+# number of unique subjects with data from year 1
+length(unique(life_youth$src_subject_id[which(life_youth$eventname=="1_year_follow_up_y_arm_1")]))
+# number of unique subjects with data from year 2
+length(unique(life_youth$src_subject_id[which(life_youth$eventname=="2_year_follow_up_y_arm_1")]))
+# number of unique subjects with data from year 3
+length(unique(life_youth$src_subject_id[which(life_youth$eventname=="3_year_follow_up_y_arm_1")]))
+# number of unique subjects with data from year 4
+length(unique(life_youth$src_subject_id[which(life_youth$eventname=="4_year_follow_up_y_arm_1")]))
+
+## feasibility based on Life Events Scale and cortical thickness----
+length(unique(cort_thick$src_subject_id) %in% unique(life_youth$src_subject_id))
+
+## feasibility based on Life Events Scale and cortical volume----
+length(unique(cort_vol$src_subject_id) %in% unique(life_youth$src_subject_id))
+
+## feasibility based on Life Events Scale and subcortical volume----
+length(unique(subcort_vol$src_subject_id) %in% unique(life_youth$src_subject_id))
+
+```
+
