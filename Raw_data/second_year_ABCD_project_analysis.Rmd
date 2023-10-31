@@ -60,11 +60,32 @@ longitudinal_info <- longitudinal_info %>% mutate("subject_visit_id" =
                                            longitudinal_info$eventname),
                                     .after = eventname)
 
-## create one data frame with all metdata, life events data, and structural mri data ----
-
+## create one data frame with all metadata, life events data, and structural mri data ----
 df_list <- list(life_youth,cort_thick,cort_vol,subcort_vol,mri_info,demo_info,longitudinal_info)
 alldata <- df_list %>% reduce(full_join, by='subject_visit_id')
 
+## combine many columns for race into one categorical column ----
+alldata <- alldata %>% 
+            mutate(demo_race_all = case_when(demo_race_a_p___10 == 1 ~ "10",
+                                             demo_race_a_p___11 == 1 ~ "11",
+                                             demo_race_a_p___12 == 1 ~ "12",
+                                             demo_race_a_p___13 == 1 ~ "13",
+                                             demo_race_a_p___14 == 1 ~ "14",
+                                             demo_race_a_p___15 == 1 ~ "15",
+                                             demo_race_a_p___16 == 1 ~ "16",
+                                             demo_race_a_p___17 == 1 ~ "17",
+                                             demo_race_a_p___18 == 1 ~ "18",
+                                             demo_race_a_p___19 == 1 ~ "19",
+                                             demo_race_a_p___20 == 1 ~ "20",
+                                             demo_race_a_p___21 == 1 ~ "21", 
+                                             demo_race_a_p___22 == 1 ~ "22",
+                                             demo_race_a_p___23 == 1 ~ "23",
+                                             demo_race_a_p___24 == 1 ~ "24",
+                                             demo_race_a_p___25 == 1 ~ "25",
+                                             demo_race_a_p___77 == 1 ~ "77",
+                                             demo_race_a_p___99 == 1 ~ "99",
+                                             ),
+                    .after=demo_race_a_p___10)
 ```
 
 ```{r feasibility testing, include=FALSE}
@@ -93,3 +114,42 @@ length(unique(subcort_vol$src_subject_id) %in% unique(life_youth$src_subject_id)
 
 ```
 
+```{r variables to include, include=FALSE}
+
+## fixed metadata and mri variables to account for ----
+demo_info$demo_sex_v2 #child's sex assigned at birth
+demo_info$demo_race_all #child's race as defined by parents
+demo_info$acs_raked_propensity_score #propensity score to weight based on demographic and SES using results of American Community Survey
+longitudinal_info$interview_age #age in months at time of visit
+
+## random metadata and mri variables to account for ----
+longitudinal_info$rel_family_id #family id
+longitudinal_info$school_id #school id
+longitudinal_info$district_id #district id
+longitudinal_info$site_id_l #site id
+subcort_vol$smri_vol_scs_wholeb # total subcortical volume (for subcortical volume measures)
+cort_vol$smri_vol_cdk_total # total cortical volume (for cortical volume measures)
+cort_thick$smri_thick_cdk_mean # average cortical thickness (for cortical thickness measures)
+mri_info$mri_info_manufacturer # mri scanner manufacturer
+
+## behavioral measures ----
+cbcl_scr_syn_aggressive_t # CBCL aggression subscale t-score
+cbcl_scr_syn_anxdep_t # CBCL anxiety/depression subscale t-score
+cbcl_scr_syn_attention_t # CBCL attention subscale t-score
+cbcl_scr_syn_external_t # CBCL externalizing subscale (rule-breaking, aggressive) t-score
+cbcl_scr_syn_internal_t # CBCL internalizing subscale (withdrawn/depressed, somatic, anxiety/depression) t-score
+cbcl_scr_syn_rulebreak_t # CBCL rule-breaking subscale t-score
+cbcl_scr_syn_social_t # CBCL social subscale t-score
+cbcl_scr_syn_somatic_t # CBCL somatic subscale t-score
+cbcl_scr_syn_thought_t # CBCL thought syndrome subscale t-score
+cbcl_scr_syn_totprob_t # CBCL total problems (externalizing, internalizing, thought, attention) t-score
+cbcl_scr_syn_withdep_t # CBCL withdrawn/depressed t-score
+
+## child-reported and caregiver-reported life events ----
+
+
+
+
+
+
+```
