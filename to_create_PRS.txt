@@ -1,0 +1,44 @@
+To create PRS:
+
+1. Open WSL (penguin)
+2. log into the Klone: ssh [NET ID]@klone.hyak.uw.edu
+3. ls [figure out where I am]
+4. cd /mmfs1/gscratch/forsyth/data/ABCD/
+
+[go to directory that has the stress snp stuff - should be in Stress directory]
+
+/mmfs1/gscratch/forsyth/data/ABCD/Package_1203714_Genetics/genomics_sample03/Stress_KS
+
+5. head stress_related_SNP.bim [make sure this is the right file with snp id as column a, alt or ref allele as column b, effect size as column c]
+6. run the command to generate PRS
+
+ /gscratch/forsyth/packages/plink --bfile /gscratch/forsyth/data/ABCD/Package_1203714_Genetics/genomics_sample03/ABCD_Pathways/subset_trios/renamed_scz_ABCD_imputed --score /gscratch/forsyth/data/ABCD/Package_1203714_Genetics/genomics_sample03/Stress_KS/data/cd  1 2 3 sum --out /gscratch/forsyth/data/ABCD/Package_1203714_Genetics/genomics_sample03/Stress_KS/output/StressPRS_w_MHC
+
+note: need to specify absolute path in output part or cd to directory where want output
+\
+ 1. copy files 
+ scp [origin_file_path] [desination_file_path]
+ Anything on Klone, add prefix:
+ kscheuer@klone.hyak.uw.edu:
+ 2. copy directories
+ scp -r  [origin_file_path] [desination_file_path]
+
+
+ 1. use ls a lot
+ 2. pwd a lot
+ 3. check the folder you're in
+ 4. check what directory you're in
+ 5. check what directory is output and if anythign else is there
+ 6. when testing commands and things try in ubuntu on local machine first then on klone
+ 7. explorer.exe . will open normal explorer, can drag/drop to home machine
+
+ chmod -R 777 [thedirectoryname] to grant permission
+
+ if I need more resources: 
+ salloc -A forsyth -p compute-bigmem -N 1 -c 10 --mem=50G --time=03:00:00
+ - Note: -c = CPU you want, --mem is memory, -p choose from compute/compute-bigmem
+
+ Checking job status:
+ squeue -u kscheuer
+ Checking who are using the resources currently
+ squeue -A forsyth
