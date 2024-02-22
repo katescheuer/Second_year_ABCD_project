@@ -1,7 +1,21 @@
+# genetics files
+*.bim
+*.profile
+*.nosex
+*.nopred
+
+# zip files
+*.zip
+
 # spreadsheet files
 *.csv
 *.xls
 *.xlsx
+
+# R history
+*.Rhistory
+*.rda
+*.Rhistory
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
