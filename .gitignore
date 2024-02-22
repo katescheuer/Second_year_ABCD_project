@@ -1,3 +1,6 @@
+# specific files
+stress_snps_withGenes_complete.txt
+
 # genetics files
 *.bim
 *.profile
