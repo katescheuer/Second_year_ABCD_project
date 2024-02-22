@@ -1,0 +1,371 @@
+---
+title: "Stress-related PRS"
+output: html_document
+date: "2024-02-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+setwd("C:/Users/Kate Scheuer/OneDrive - UW/Desktop/Lab/Second_year_ABCD_project/Working")
+
+```
+
+### Import data, load libraries
+
+```{r import data, load libraries, echo=FALSE}
+
+### load libraries ####
+library(readxl)
+library(tidyverse)
+library(GENESIS)
+
+### import data ####
+
+## ABCD data
+demo <- read.csv("abcd_p_demo.csv",header=T) # demographics
+income <- read_xlsx("ABCD_SES_incomeneeds.xlsx")
+meta <- read.csv("abcd_y_lt.csv",header=T) #site id, interview age
+cbcl <- read.csv("mh_p_cbcl.csv",header=T) # cbcl
+ksads_y <- read.csv("mh_y_ksads_ss.csv",header=T) #youth-reported ksads
+ksads_p <- read.csv("mh_p_ksads_ss.csv",header=T) #parent-reported ksads
+
+## PRS
+prs_no_mhc <- read.table("StressPRS.profile",header=T) #not including any snps in mhc
+prs_one_mhc <- read.table("StressPRS_w_MHC.profile",header=T) #including one snp in mhc w highest effect size
+prs_all_mhc <- read.table("StressPRS_w_one_MHC.profile",header=T) #include all snps in mhc
+
+## genetic relatedness matrices (GRMs)
+all_grm <- readRDS(file = "ABCD_All_PCRel_grm_sparse.rda") # all ancestries
+afr_grm <- readRDS(file = "ABCD_Afr_PCRel_grm_sparse.rda") # african ancestry
+amadmix_grm <- readRDS(file = "ABCD_AmerAdmix_PCRel_grm_sparse.rda") # american admixed ancestry
+eur_grm <- readRDS(file = "ABCD_Eur_PCRel_grm_sparse.rda") # european ancestry
+
+## ancestry groupings
+afr_gp <- read_xlsx("ABCD_RF_Afr_Grouping.xlsx")
+amadmix_gp <- read_xlsx("ABCD_RF_AmerAdmix_Grouping.xlsx")
+eur_gp <- read_xlsx("ABCD_RF_Eur_Grouping.xlsx")
+
+```
+
+### Group all like files into one data frame each
+
+```{r group data, echo=FALSE}
+
+income <- income %>% rename(src_subject_id = subjectkey)
+
+test <- select(ksads_y,c("src_subject_id","eventname",
+                         "ksads_14_853_t", # current adhd baseline to year 2
+                         "ksads2_14_809_t", # currend adhd year 3+
+                         "ksads_10_869_t", # current gad baseline to year 2
+                         "ksads2_10_827_t", # currend gad year 3+
+                         "ksads_1_840_t", # current mdd baseline to year 2
+                         "ksads2_1_790_t", # currend mdd year 3+
+                         "ksads_21_921_t", # current ptsd baseline to year 2
+                         "ksads2_21_881_t" # currend ptsd year 3+
+                         )) %>%
+        left_join(select(ksads_p,c("src_subject_id","eventname",
+                                     "ksads_14_853_p", # current adhd baseline to year 2
+                                     "ksads2_14_809_p", # currend adhd year 3+
+                                     "ksads_10_869_p", # current gad baseline to year 2
+                                     "ksads2_10_827_p", # currend gad year 3+
+                                     "ksads_1_840_p", # current mdd baseline to year 2
+                                     "ksads2_1_790_p", # currend mdd year 3+
+                                     "ksads_21_921_p", # current ptsd baseline to year 2
+                                     "ksads2_21_881_p" # currend ptsd year 3+
+                                     )))
+  
+  
+  
+  
+  
+              mutate(adhd_current = case_when(
+                                            ksads_14_853_t == 1 ~ 1,
+                                            ksads_14_853_t == 0 ~ 0,
+                                            ksads_14_853_t == 555 ~ NA,
+                                            ksads_14_853_t == 888 ~ NA,
+                                            ksads_14_853_t == NA ~ NA,
+                                            ksads2_14_809_t == 1 ~ 1,
+                                            ksads2_14_809_t == 0 ~ 0,
+                                            ksads2_14_809_t == 555 ~ NA,
+                                            ksads2_14_809_t == 888 ~ NA,
+                                            ksads2_14_809_t == NA ~ NA
+                                            )) %>%
+              mutate(gad_current = case_when(
+                                            ksads_10_869_t == 1 ~ 1,
+                                            ksads_10_869_t == 0 ~ 0,
+                                            ksads_10_869_t == 555 ~ NA,
+                                            ksads_10_869_t == 888 ~ NA,
+                                            ksads_10_869_t == NA ~ NA,
+                                            ksads2_10_827_t == 1 ~ 1,
+                                            ksads2_10_827_t == 0 ~ 0,
+                                            ksads2_10_827_t == 555 ~ NA,
+                                            ksads2_10_827_t == 888 ~ NA,
+                                            ksads2_10_827_t == NA ~ NA
+                                            )) %>%
+              mutate(mdd_current = case_when(
+                                            ksads_1_840_t == 1 ~ 1,
+                                            ksads_1_840_t == 0 ~ 0,
+                                            ksads_1_840_t == 555 ~ NA,
+                                            ksads_1_840_t == 888 ~ NA,
+                                            ksads_1_840_t == NA ~ NA,
+                                            ksads2_1_790_t == 1 ~ 1,
+                                            ksads2_1_790_t == 0 ~ 0,
+                                            ksads2_1_790_t == 555 ~ NA,
+                                            ksads2_1_790_t == 888 ~ NA,
+                                            ksads2_1_790_t == NA ~ NA
+                                            )) %>%
+              mutate(ptsd_current = case_when(
+                                            ksads_21_921_t == 1 ~ 1,
+                                            ksads_21_921_t == 0 ~ 0,
+                                            ksads_21_921_t == 555 ~ NA,
+                                            ksads_21_921_t == 888 ~ NA,
+                                            ksads_21_921_t == NA ~ NA,
+                                            ksads2_21_881_t == 1 ~ 1,
+                                            ksads2_21_881_t == 0 ~ 0,
+                                            ksads2_21_881_t == 555 ~ NA,
+                                            ksads2_21_881_t == 888 ~ NA,
+                                            ksads2_21_881_t == NA ~ NA
+                                            ))
+
+
+
+
+abcd_all <- demo %>%
+              select(c("src_subject_id","eventname",
+                       "demo_sex_v2","demo_gender_id_v2","demo_gender_id_v2_l",
+                       "demo_comb_income_v2","demo_comb_income_v2_l")) %>%
+              left_join(select(income,
+                               c("src_subject_id","income_to_needs")),
+                        by=c("src_subject_id")) %>%
+              left_join(select(meta,
+                               c("src_subject_id","eventname","interview_age")),
+                        by=c("src_subject_id","eventname")) %>%
+              left_join(select(cbcl,
+                               c("src_subject_id","eventname",
+                                 "cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
+                                 "cbcl_scr_syn_anxdep_t","cbcl_scr_syn_external_t",
+                                 "cbcl_scr_syn_internal_t","cbcl_scr_syn_rulebreak_t",
+                                 "cbcl_scr_syn_social_t","cbcl_scr_syn_somatic_t",
+                                 "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
+                                 "cbcl_scr_syn_withdep_t")),
+                        by=c("src_subject_id","eventname"))
+
+prs_all <- prs_all_mhc %>%
+              left_join(select(prs_one_mhc,c("SCORESUM","IID")),
+                        by="IID") %>%
+              rename(prs_all_mhc_val = SCORESUM.x,
+                     prs_one_mhc_val = SCORESUM.y) %>%
+              left_join(select(prs_no_mhc,c("SCORESUM","IID")),
+                        by="IID") %>%
+              rename(prs_no_mhc_val = SCORESUM) %>%
+              select(c("IID","prs_all_mhc_val","prs_one_mhc_val","prs_no_mhc_val")) %>%
+              rename(src_subject_id = IID)
+prs_all$src_subject_id <- gsub("^.{1,10}","",prs_all$src_subject_id) #if remove first 10 char then = subject id as in abcd
+
+afr_gp <- afr_gp %>% mutate(ancestry="Afr")
+amadmix_gp <- amadmix_gp %>% mutate(ancestry="AmAdmix")
+eur_gp <- eur_gp %>% mutate(ancestry="Eur")
+ancestry_gp_all <- bind_rows(afr_gp,amadmix_gp,eur_gp) %>%
+                      select("subjectkey","ancestry","V1","V2","V3","V4","V5","V6","V7","V8") %>%
+                      rename(src_subject_id = subjectkey)
+
+### rename grms so names are consistent with abcd names
+#if remove first 10 char from rownames in grm then = subject id
+rownames(all_grm) <- gsub("^.{1,10}","",rownames(all_grm)) 
+colnames(all_grm) <- gsub("^.{1,10}","",colnames(all_grm))
+rownames(afr_grm) <- gsub("^.{1,10}","",rownames(afr_grm))
+colnames(afr_grm) <- gsub("^.{1,10}","",colnames(afr_grm))
+rownames(amadmix_grm) <- gsub("^.{1,10}","",rownames(amadmix_grm))
+colnames(amadmix_grm) <- gsub("^.{1,10}","",colnames(amadmix_grm))
+rownames(eur_grm) <- gsub("^.{1,10}","",rownames(eur_grm))
+colnames(eur_grm) <- gsub("^.{1,10}","",colnames(eur_grm))
+
+### combine all data except grms
+data_all <- abcd_all %>%
+              left_join(prs_all, by="src_subject_id") %>%
+              left_join(ancestry_gp_all, by="src_subject_id")
+
+### remove subjects without ancestry information
+data_all <- data_all %>% filter(!is.na(ancestry))
+
+```
+
+### Z-score PRS within each ancestry group
+
+```{r z-score prs, echo=FALSE}
+
+data_all <- data_all %>% 
+          group_by(ancestry) %>%
+          mutate(Zprs_all_mhc_val = as.numeric(scale(prs_all_mhc_val, scale=TRUE))) %>%
+          mutate(Zprs_one_mhc_val = as.numeric(scale(prs_one_mhc_val, scale=TRUE))) %>%
+          mutate(Zprs_no_mhc_val = as.numeric(scale(prs_no_mhc_val, scale=TRUE)))
+
+### create column for PRS interactions with income-to-needs, sex, age
+data_all <- data_all %>%
+          mutate(Zprsall_x_income = Zprs_all_mhc_val*income_to_needs) %>%
+          mutate(Zprsall_x_sex = Zprs_all_mhc_val*demo_sex_v2) %>%
+          mutate(Zprsall_x_age = Zprs_all_mhc_val*interview_age)
+
+```
+
+### Separate data based on collection date
+
+``` {r}
+
+baseline_data <- data_all %>% filter(eventname == "baseline_year_1_arm_1")
+yr1_data <- data_all %>% filter(eventname == "1_year_follow_up_y_arm_1")
+yr2_data <- data_all %>% filter(eventname == "2_year_follow_up_y_arm_1")
+yr3_data <- data_all %>% filter(eventname == "3_year_follow_up_y_arm_1")
+yr4_data <- data_all %>% filter(eventname == "4_year_follow_up_y_arm_1")
+
+```
+
+### Reorder data so matches grm
+
+```{r}
+
+### All ancestries
+                    
+row_indices_All <- match(baseline_data$src_subject_id,rownames(all_grm)) 
+all_grm_sparse_subsetted <- all_grm[row_indices_All, row_indices_All]
+all_baseline_data_reordered <- baseline_data[match(colnames(all_grm_sparse_subsetted),baseline_data$src_subject_id),]
+all_baseline_data_reordered <- all_baseline_data_reordered %>% column_to_rownames(var="src_subject_id")
+
+### African ancestry
+
+afr_baseline_data <- baseline_data %>% filter(ancestry=="Afr")
+row_indices_All <- match(afr_baseline_data$src_subject_id,rownames(afr_grm))
+afr_grm_sparse_subsetted <- afr_grm[row_indices_All, row_indices_All]
+afr_baseline_data_reordered <- afr_baseline_data[match(colnames(afr_grm_sparse_subsetted),afr_baseline_data$src_subject_id),]
+afr_baseline_data_reordered <- afr_baseline_data_reordered %>% column_to_rownames(var="src_subject_id")
+
+### American admixed ancestry
+
+amadmix_baseline_data <- baseline_data %>% filter(ancestry=="AmAdmix")
+row_indices_All <- match(amadmix_baseline_data$src_subject_id,rownames(amadmix_grm))
+amadmix_grm_sparse_subsetted <- amadmix_grm[row_indices_All, row_indices_All]
+amadmix_baseline_data_reordered <- amadmix_baseline_data[match(colnames(amadmix_grm_sparse_subsetted),
+                                                               amadmix_baseline_data$src_subject_id),]
+amadmix_baseline_data_reordered <- amadmix_baseline_data_reordered %>% column_to_rownames(var="src_subject_id")
+
+
+### European ancestry
+
+eur_baseline_data <- baseline_data %>% filter(ancestry=="Eur")
+row_indices_All <- match(eur_baseline_data$src_subject_id,rownames(eur_grm))
+eur_grm_sparse_subsetted <- eur_grm[row_indices_All, row_indices_All]
+eur_baseline_data_reordered <- eur_baseline_data[match(colnames(eur_grm_sparse_subsetted),
+                                                       eur_baseline_data$src_subject_id),]
+eur_baseline_data_reordered <- eur_baseline_data_reordered %>% column_to_rownames(var="src_subject_id")
+
+```
+
+### Run regressions for all CBCL outcomes at baseline
+
+``` {r}
+
+outcome_list <- c("cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
+                  "cbcl_scr_syn_anxdep_t","cbcl_scr_syn_external_t",
+                  "cbcl_scr_syn_internal_t","cbcl_scr_syn_rulebreak_t",
+                  "cbcl_scr_syn_social_t","cbcl_scr_syn_somatic_t",
+                  "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
+                  "cbcl_scr_syn_withdep_t" )
+ancestry_list <- c("all","afr","amadmix","eur")
+ancestry_data_list <- c("all_baseline_data_reordered",
+                        "afr_baseline_data_reordered",
+                        "amadmix_baseline_data_reordered",
+                        "eur_baseline_data_reordered")
+grm_list <- c("all_grm_sparse_subsetted","afr_grm_sparse_subsetted",
+              "amadmix_grm_sparse_subsetted","eur_grm_sparse_subsetted")
+
+### Set p-value correction
+# ntests <- length(outcome_list) #correct for each outcome measure
+ntests <- 8 #8 independent measures from cbcl (other 3 are composites)
+bonfsigval <- 0.05/ntests
+
+for (ancestry in ancestry_list) {
+  lm_results <- list() # initialize a list to store results  
+  for (outcome in outcome_list) {
+  # Fit null models
+  lm_model <- fitNullModel(get(ancestry_data_list[str_which(ancestry_data_list,ancestry)]), 
+                           outcome = outcome, 
+                           covars = c("Zprs_all_mhc_val","interview_age",
+                                      "demo_sex_v2","income_to_needs",
+                                      paste0("V", 1:8),
+                                      "Zprsall_x_income",
+                                      "Zprsall_x_sex",
+                                      "Zprsall_x_age"
+                                      ), 
+                           cov.mat = get(grm_list[str_which(ancestry_data_list,ancestry)]), 
+                           verbose = TRUE)
+
+  # Store the fixef component with the first column as the outcome and variables
+  lm_results[[outcome]] <- lm_model$fixef %>%
+                              rownames_to_column("variable") %>%
+                              mutate(variable = paste0(str_extract(outcome,
+                                "(?<=cbcl_scr_syn_).*?(?=t$)"), variable)) %>%
+                              mutate(sig = case_when(
+                                # pval <= bonfsigval ~ "bf_sig",
+                                pval < 0.001 ~ "***",
+                                pval < 0.01 ~ "**",
+                                pval < 0.05 ~ "*",
+                                TRUE ~ "ns"
+                              ))
+  assign(paste0("lm_",ancestry,"_results"),lm_results)
+  }
+}
+
+```
+
+```{r}
+
+ggplot(aes(x=prs_one_mhc_val,y=cbcl_scr_syn_aggressive_t),data=eur_baseline_data_reordered) +
+  geom_point(color="gray") +
+  geom_smooth() +
+  theme_bw()
+
+
+ggplot(aes(x=prs_all_mhc_val,y=cbcl_scr_syn_anxdep_t),data=baseline_data_reordered) +
+  geom_point(color="gray") +
+  geom_smooth() +
+  theme_bw()
+
+ggplot(aes(x=prs_no_mhc_val,y=cbcl_scr_syn_external_t),data=baseline_data_reordered) +
+  geom_point(color="gray") +
+  geom_smooth() +
+  theme_bw()
+
+ggplot(aes(x=prs_all_mhc_val,y=cbcl_scr_syn_internal_t),data=eur_baseline_data_reordered) +
+  geom_point(color="gray") +
+  geom_smooth() +
+  theme_bw()
+
+ggplot(aes(x=prs_one_mhc_val,y=cbcl_scr_syn_rulebreak_t),data=eur_baseline_data_reordered) +
+  geom_point(color="gray") +
+  geom_smooth() +
+  theme_bw()
+
+ggplot(aes(x=prs_one_mhc_val,y=cbcl_scr_syn_somatic_t),data=amadmix_baseline_data_reordered) +
+  geom_point(color="gray") +
+  geom_smooth() +
+  theme_bw()
+
+ggplot(aes(x=prs_all_mhc_val,y=cbcl_scr_syn_thought_t),data=baseline_data_reordered) +
+  geom_point(color="gray") +
+  geom_smooth() +
+  theme_bw()
+
+ggplot(aes(x=prs_all_mhc_val,y=cbcl_scr_syn_totprob_t),data=eur_baseline_data_reordered) +
+  geom_point(color="gray") +
+  geom_smooth() +
+  theme_bw()
+
+ggplot(aes(x=prs_one_mhc_val,y=cbcl_scr_syn_withdep_t),data=eur_baseline_data_reordered) +
+  geom_point(color="gray") +
+  geom_smooth() +
+  theme_bw()
+
+
+
+```
