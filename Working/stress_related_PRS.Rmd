@@ -788,11 +788,7 @@ yr4_reg_data <- yr4_data %>%
                   raw_ksads_mdd = mdd,
                   raw_ksads_ptsd = ptsd,
                   prs = prs_all_mhc_val
-                ) 
-
-## join dataframes with abcd info and residuals ####
-## all
-yr4_reg_all_data <- yr4_reg_data %>% 
+                ) %>%
         left_join(lm_all_resid_cbcl,by="id") %>%
         left_join(lm_all_resid_ksads,by="id") %>%
         rename(
@@ -813,77 +809,31 @@ yr4_reg_all_data <- yr4_reg_data %>%
                 resid_ksads_ptsd = ptsd
         )
 
-## african ancestry
-yr4_reg_afr_data <- yr4_reg_data %>% 
-        filter(ancestry == "Afr") %>%
-        left_join(lm_all_resid_cbcl,by="id") %>%
-        left_join(lm_all_resid_ksads,by="id") %>%
-        rename(
-                resid_cbcl_aggress = cbcl_scr_syn_aggressive_t,
-                resid_cbcl_attn = cbcl_scr_syn_attention_t,
-                resid_cbcl_anxdep = cbcl_scr_syn_anxdep_t,
-                resid_cbcl_ext = cbcl_scr_syn_external_t,
-                resid_cbcl_int = cbcl_scr_syn_internal_t,
-                resid_cbcl_rule = cbcl_scr_syn_rulebreak_t,
-                resid_cbcl_social = cbcl_scr_syn_social_t,
-                resid_cbcl_somatic = cbcl_scr_syn_somatic_t,
-                resid_cbcl_thought = cbcl_scr_syn_thought_t,
-                resid_cbcl_total = cbcl_scr_syn_totprob_t,
-                resid_cbcl_withdep = cbcl_scr_syn_withdep_t,
-                # resid_ksads_adhd = adhd,
-                resid_ksads_gad = gad,
-                resid_ksads_mdd = mdd,
-                resid_ksads_ptsd = ptsd
-        )
+## make dummy and effect-coded versions of categorical variables ####
+test <- yr4_reg_data %>%
+          # make 777 and 999 in gender column NA
+          mutate(gender = if_else(gender %in% c(777, 999), NA_real_, gender)) %>%
+          dummy_cols(select_columns = c("gender"))
+  
+  
+          recipe(~ gender) %>%
+          step_dummy(all_nominal())
+  
+recipe_dummy <- recipe(~ gender, data = yr4_reg_data) %>%
+  step_dummy(all_nominal())
 
-## american admixed ancestry
-yr4_reg_amadmix_data <- yr4_reg_data %>% 
-        filter(ancestry == "AmAdmix") %>%
-        left_join(lm_all_resid_cbcl,by="id") %>%
-        left_join(lm_all_resid_ksads,by="id") %>%
-        rename(
-                resid_cbcl_aggress = cbcl_scr_syn_aggressive_t,
-                resid_cbcl_attn = cbcl_scr_syn_attention_t,
-                resid_cbcl_anxdep = cbcl_scr_syn_anxdep_t,
-                resid_cbcl_ext = cbcl_scr_syn_external_t,
-                resid_cbcl_int = cbcl_scr_syn_internal_t,
-                resid_cbcl_rule = cbcl_scr_syn_rulebreak_t,
-                resid_cbcl_social = cbcl_scr_syn_social_t,
-                resid_cbcl_somatic = cbcl_scr_syn_somatic_t,
-                resid_cbcl_thought = cbcl_scr_syn_thought_t,
-                resid_cbcl_total = cbcl_scr_syn_totprob_t,
-                resid_cbcl_withdep = cbcl_scr_syn_withdep_t,
-                # resid_ksads_adhd = adhd,
-                resid_ksads_gad = gad,
-                resid_ksads_mdd = mdd,
-                resid_ksads_ptsd = ptsd
-        )        
+# Apply the recipe to the data
+dummy_coded_data <- bake(recipe_dummy, new_data = NULL)
 
-## european ancestry
-yr4_reg_eur_data <- yr4_reg_data %>% 
-        filter(ancestry == "Eur") %>%
-        left_join(lm_all_resid_cbcl,by="id") %>%
-        left_join(lm_all_resid_ksads,by="id") %>%
-        rename(
-                resid_cbcl_aggress = cbcl_scr_syn_aggressive_t,
-                resid_cbcl_attn = cbcl_scr_syn_attention_t,
-                resid_cbcl_anxdep = cbcl_scr_syn_anxdep_t,
-                resid_cbcl_ext = cbcl_scr_syn_external_t,
-                resid_cbcl_int = cbcl_scr_syn_internal_t,
-                resid_cbcl_rule = cbcl_scr_syn_rulebreak_t,
-                resid_cbcl_social = cbcl_scr_syn_social_t,
-                resid_cbcl_somatic = cbcl_scr_syn_somatic_t,
-                resid_cbcl_thought = cbcl_scr_syn_thought_t,
-                resid_cbcl_total = cbcl_scr_syn_totprob_t,
-                resid_cbcl_withdep = cbcl_scr_syn_withdep_t,
-                # resid_ksads_adhd = adhd,
-                resid_ksads_gad = gad,
-                resid_ksads_mdd = mdd,
-                resid_ksads_ptsd = ptsd
-        )
+          mutate(gender = as.factor(gender)) %>%
+          modelr::dummy_cols()
+
+gender
+ancestry
+
         
 # Intercept-Only Model Estimation (for Y) ----
-cbcl_total_M0 <- lmer(resid_cbcl_total ~ 1 + (1|site), data=yr4_reg_all_data, REML=FALSE)
+cbcl_total_M0 <- lmer(resid_cbcl_total ~ 1 + (1|site), data=yr4_reg_data, REML=FALSE)
 summary(cbcl_total_M0)
 ## computing the ICC for Y using variance components ----
 variances = as.data.frame(VarCorr(cbcl_total_M0))
@@ -893,7 +843,7 @@ ICC_Y2 <- cluster_var/(cluster_var + resid_var)
 ICC_Y2
 
 # Obtaining ICCs for L1 Predictors (Intercept-Only Model for X) ----
-gender_M0 <- lmer(gender ~ (1|site), data=yr4_reg_all_data, REML=FALSE)
+gender_M0 <- lmer(gender ~ (1|site), data=yr4_reg_data, REML=FALSE)
 summary(gender_M0)
 variances = as.data.frame(VarCorr(gender_M0))
 cluster_var = variances[1,'vcov']
@@ -901,7 +851,7 @@ resid_var = variances[2,'vcov']
 ICC_gender <- cluster_var/(cluster_var + resid_var)
 ICC_gender
 
-income_to_needs_M0 <- lmer(income_to_needs ~ (1|site), data=yr4_reg_all_data, REML=FALSE)
+income_to_needs_M0 <- lmer(income_to_needs ~ (1|site), data=yr4_reg_data, REML=FALSE)
 summary(income_to_needs_M0)
 variances = as.data.frame(VarCorr(income_to_needs_M0))
 cluster_var = variances[1,'vcov']
@@ -909,7 +859,7 @@ resid_var = variances[2,'vcov']
 ICC_income_to_needs <- cluster_var/(cluster_var + resid_var)
 ICC_income_to_needs
 
-age_M0 <- lmer(age ~ (1|site), data=yr4_reg_all_data, REML=FALSE)
+age_M0 <- lmer(age ~ (1|site), data=yr4_reg_data, REML=FALSE)
 summary(age_M0)
 variances = as.data.frame(VarCorr(age_M0))
 cluster_var = variances[1,'vcov']
@@ -917,7 +867,7 @@ resid_var = variances[2,'vcov']
 ICC_age <- cluster_var/(cluster_var + resid_var)
 ICC_age
 
-prs_M0 <- lmer(prs ~ (1|site), data=yr4_reg_all_data, REML=FALSE)
+prs_M0 <- lmer(prs ~ (1|site), data=yr4_reg_data, REML=FALSE)
 summary(prs_M0)
 variances = as.data.frame(VarCorr(prs_M0))
 cluster_var = variances[1,'vcov']
@@ -927,7 +877,7 @@ ICC_prs
 
 # Decomposing L1 Predictors ----
 ### start with dummy-coding ----
-test <- yr4_reg_all_data %>%
+test <- yr4_reg_data %>%
           mutate(cis_female = case_when(
                                   gender == 1 ~ 0, #cis male
                                   gender == 2 ~ 1, #cis female
@@ -986,7 +936,7 @@ ancestry
 mlbook_red$female_dum = mlbook_red$sex
 mlbook_red$minority_dum = mlbook_red$Minority
 ### now effect-code our categorical predictor variables ----
-yr4_reg_all_data$female_eff = as.numeric(car::recode(yr4_reg_all_data$gender, "1=1;0=-1")) 
+yr4_reg_data$female_eff = as.numeric(car::recode(yr4_reg_data$gender, "1=1;0=-1")) 
 
 
 ```
