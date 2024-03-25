@@ -21,6 +21,8 @@ library(tidyverse)
 library(GENESIS)
 library(lme4)
 library(Matrix)
+library(misty)
+library(lmerTest)
 
 ### avoid scientific notation ####
 options(scipen=999) ## forces full display of results, all digits
