@@ -33,11 +33,14 @@ options(scipen=999) ## forces full display of results, all digits
 
 ## ABCD data
 demo <- read.csv("abcd_p_demo.csv",header=T) # demographics
-income <- read_xlsx("ABCD_SES_incomeneeds.xlsx")
+# income <- read_xlsx("ABCD_SES_incomeneeds.xlsx")
 meta <- read.csv("abcd_y_lt.csv",header=T) #site id, interview age
 cbcl <- read.csv("mh_p_cbcl.csv",header=T) # cbcl
 ksads_y <- read.csv("mh_y_ksads_ss.csv",header=T) #youth-reported ksads
 ksads_p <- read.csv("mh_p_ksads_ss.csv",header=T) #parent-reported ksads
+
+## federal poverty data from https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines
+poverty_info <- read.csv("federal_poverty_info.csv",header=T)
 
 ## PRS 
 prs_no_mhc <- read.table("StressPRS.profile",header=T) #not including any snps in mhc
@@ -57,17 +60,11 @@ eur_gp <- read_xlsx("ABCD_RF_Eur_Grouping.xlsx")
 
 ```
 
-### Group all like files into one data frame each
+### Group all like files into one data frame each, basic data cleaning
 
 ```{r group data, echo=FALSE}
 
-### rename income subjects to have subject id as abcd data
-income <- income %>% rename(src_subject_id = subjectkey)
-
-#youth ksads: all na - adhd baseline to year 2, adhd year 3+,
-#                      ptsd baseline to year 2, pstd year 3+
-
-### make one column each for ever having diagnosis ####
+### make one column each for ever having ksads diagnosis ####
 ksads <- select(ksads_y,c("src_subject_id","eventname",
                           
                          "ksads_14_854_t", # past adhd baseline to year 2
@@ -482,19 +479,74 @@ ksads <- select(ksads_y,c("src_subject_id","eventname",
 
 
 
+
+
+
+
+
+### calculate income to needs ratio
+income_df <- demo %>%
+              select(c("src_subject_id","eventname",
+                       "demo_roster_v2","demo_roster_v2_l",
+                       "demo_roster_v2_refuse","demo_roster_v2_refuse_l",
+                       "demo_comb_income_v2","demo_comb_income_v2_l")) %>%
+              # combine items for income from baseline to yr 2 and yr 3+
+              mutate(income_category = case_when(!is.na(demo_comb_income_v2) ~ demo_comb_income_v2,
+                                        !is.na(demo_comb_income_v2_l) ~ demo_comb_income_v2_l
+                                  )) %>%
+              # for income replace 777 and 999 with NA
+              mutate(income_category = ifelse(income_category %in% 
+                                                c(777,999) , NA, income_category)) %>%
+              # add column for middle value of income category (or upper for 10)
+              mutate(income_val = case_when(income_category == 1 ~ 2499.5, # less than 5,000
+                                            income_category == 2 ~ 8499.5, # 5,000 to 11,999
+                                            income_category == 3 ~ 13999.5, # 12,000 to 15,999
+                                            income_category == 4 ~ 20499.5, # 16,000 to 24,999
+                                            income_category == 5 ~ 29999.5, # 25,000 to 34,999
+                                            income_category == 6 ~ 42499.5, # 35,000 to 49,999
+                                            income_category == 7 ~ 62499.5, # 50,000 to 74,999
+                                            income_category == 8 ~ 87499.5, # 75,000 to 99,999
+                                            income_category == 9 ~ 149999.5, # 100,000 to 199,999
+                                            income_category == 10 ~ 200000 # 200,000 and greater
+                                  )) %>%
+              # combine items for household size from baseline to yr 2 and yr 3+
+              mutate(household_size = case_when(demo_roster_v2_refuse %in% c(777,999) ~ NA,
+                                                demo_roster_v2_refuse_l %in% c(777,999) ~ NA,
+                                        !is.na(demo_roster_v2) ~ demo_roster_v2,
+                                        !is.na(demo_roster_v2_l) ~ demo_roster_v2_l
+                                  )) %>%
+              # for household size replace unreasonable values with NA
+              mutate(household_size = ifelse(household_size %in% 
+                                                c(-4, 0, 41, 43, 56, 60, 77, 110, 2300) , NA, household_size)) %>%
+              # add year data was collected
+              left_join(select(meta,c("src_subject_id","eventname","interview_date")),
+                                    by=c("src_subject_id","eventname")) %>%
+              mutate(year = as.integer(gsub("^.{1,6}","",interview_date))) %>%
+              # add federal poverty line for given year and household size
+              left_join(poverty_info,by=c("household_size","year")) %>%
+              # calculate income to needs ratio
+              mutate(income_to_needs = income_val/poverty_line)
+
+
 ## group all abcd data ####  
 abcd_all <- demo %>%
-              select(c("src_subject_id","eventname",
-                       "demo_sex_v2","demo_gender_id_v2","demo_gender_id_v2_l",
-                       "demo_comb_income_v2","demo_comb_income_v2_l")) %>%
-              left_join(select(income,
-                               c("src_subject_id","income_to_needs")),
-                        by=c("src_subject_id")) %>%
+              select(c("src_subject_id","eventname","demo_sex_v2",
+                       "demo_gender_id_v2","demo_gender_id_v2_l")) %>%
+              # combine items for gender from baseline to yr 2 and yr 3+
+              mutate(gender_id = case_when(!is.na(demo_gender_id_v2) ~ demo_gender_id_v2,
+                                        !is.na(demo_gender_id_v2_l) ~ demo_gender_id_v2_l
+                                  )) %>%
+              # for gender replace 777 and 999 with NA
+              mutate(gender_id = ifelse(gender_id %in% c(777,999) , NA, gender_id)) %>%
+              # add income to needs ratio
+              left_join(income_df,by=c("src_subject_id","eventname")) %>%
+              # add site and interview age
               left_join(select(meta,
                                c("src_subject_id","eventname",
                                  "site_id_l","interview_age")),
                         by=c("src_subject_id","eventname")) %>%
               rename(site = site_id_l) %>%
+              # add cbcl scores
               left_join(select(cbcl,
                                c("src_subject_id","eventname",
                                  "cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
@@ -504,8 +556,10 @@ abcd_all <- demo %>%
                                  "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
                                  "cbcl_scr_syn_withdep_t")),
                         by=c("src_subject_id","eventname")) %>%
-              left_join(ksads,by=c("src_subject_id","eventname"))
+              # add ksads scores
+              left_join(ksads,by=c("src_subject_id","eventname")) 
 
+## group all prs data ####
 prs_all <- prs_all_mhc %>%
               left_join(select(prs_one_mhc,c("SCORESUM","IID")),
                         by="IID") %>%
@@ -526,7 +580,7 @@ ancestry_gp_all <- bind_rows(afr_gp,amadmix_gp,eur_gp) %>%
                       select("subjectkey","ancestry","V1","V2","V3","V4","V5","V6","V7","V8") %>%
                       rename(src_subject_id = subjectkey)
 
-### rename grms so names are consistent with abcd names
+# rename grms so names are consistent with abcd names
 #if remove first 10 char from rownames in grm then = subject id
 rownames(all_grm) <- gsub("^.{1,10}","",rownames(all_grm)) 
 colnames(all_grm) <- gsub("^.{1,10}","",colnames(all_grm))
@@ -545,25 +599,12 @@ data_all <- abcd_all %>%
 ### remove subjects without ancestry information ####
 data_all <- data_all %>% filter(!is.na(ancestry))
 
-```
-
-### Z-score PRS within each ancestry group
-
-```{r z-score prs, echo=FALSE}
-
-### Z-score all PRS ####
+### Z-score all PRS based on ancestry ####
 data_all <- data_all %>% 
           group_by(ancestry) %>%
           mutate(Zprs_all_mhc_val = as.numeric(scale(prs_all_mhc_val, scale=TRUE))) %>%
           mutate(Zprs_one_mhc_val = as.numeric(scale(prs_one_mhc_val, scale=TRUE))) %>%
           mutate(Zprs_no_mhc_val = as.numeric(scale(prs_no_mhc_val, scale=TRUE)))
-
-# ### create column for PRS interactions with income-to-needs, sex, gender, age ####
-# data_all <- data_all %>%
-#           mutate(Zprsall_x_income = Zprs_all_mhc_val*income_to_needs) %>%
-#           mutate(Zprsall_x_sex = Zprs_all_mhc_val*demo_sex_v2) %>%
-#           mutate(Zprsall_x_gender = Zprs_all_mhc_val*demo_gender_id_v2_l) %>%
-#           mutate(Zprsall_x_age = Zprs_all_mhc_val*interview_age)
 
 ```
 
@@ -631,53 +672,30 @@ eur_yr4_data_reordered <- eur_yr4_data_reordered %>% column_to_rownames(var="src
 
 ``` {run grm and ancestry pc for all cbcl outcomes, r}
 
-## run lin reg for each outcomes for each ancestry group ####
+## run lin reg for each cbcl outcome ####
 cbcl_outcome_list <- c("cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
                   "cbcl_scr_syn_anxdep_t","cbcl_scr_syn_external_t",
                   "cbcl_scr_syn_internal_t","cbcl_scr_syn_rulebreak_t",
                   "cbcl_scr_syn_social_t","cbcl_scr_syn_somatic_t",
                   "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
                   "cbcl_scr_syn_withdep_t" )
-# ancestry_list <- c("all","afr","amadmix","eur")
-# ancestry_data_list <- c("all_yr4_data_reordered",
-#                         "afr_yr4_data_reordered",
-#                         "amadmix_yr4_data_reordered",
-#                         "eur_yr4_data_reordered")
-# grm_list <- c("all_grm_sparse_subsetted","afr_grm_sparse_subsetted",
-#               "amadmix_grm_sparse_subsetted","eur_grm_sparse_subsetted")
 
-# for (ancestry in ancestry_list) {
-lm_resid_cbcl_list <- list() # initialize a list to store results  
+lm_resid_cbcl_list <- list() 
 for (outcome in cbcl_outcome_list) {
-  # Fit null models
-  # lm_model <- fitNullModel(get(ancestry_data_list[str_which(ancestry_data_list,ancestry)]), 
   lm_model <- fitNullModel(all_yr4_data_reordered, 
                            outcome = outcome, 
                            covars = c(paste0("V", 1:8)), 
                            cov.mat = all_grm_sparse_subsetted, 
                            verbose = TRUE)
-  
-  # Store the fixef component with the first column as the outcome and variables
   lm_resid_cbcl_list[[outcome]] <- lm_model$fit %>%
                               rownames_to_column("id") %>%
                               select(c(id,resid.conditional))
-  # assign(paste0("lm_",ancestry,"_cbcl_results"),lm_cond_resid)
 }
-# }
 
-## make long and wide dataframes for residuals for each ancestry group ####
+## make one data frame with residuals for all cbcl results
 lm_all_cond_resid_cbcl_long <- imap_dfr(lm_resid_cbcl_list, ~mutate(.x, .id = .y))
 lm_resid_cbcl <- lm_all_cond_resid_cbcl_long %>%
   pivot_wider(names_from = .id, values_from = resid.conditional)
-# lm_afr_cond_resid_cbcl_long <- imap_dfr(lm_afr_cbcl_results, ~mutate(.x, .id = .y))
-# lm_afr_resid_cbcl <- lm_afr_cond_resid_cbcl_long %>%
-#   pivot_wider(names_from = .id, values_from = resid.conditional)
-# lm_amadmix_cond_resid_cbcl_long <- imap_dfr(lm_amadmix_cbcl_results, ~mutate(.x, .id = .y))
-# lm_amadmix_resid_cbcl <- lm_amadmix_cond_resid_cbcl_long %>%
-#   pivot_wider(names_from = .id, values_from = resid.conditional)
-# lm_eur_cond_resid_cbcl_long <- imap_dfr(lm_eur_cbcl_results, ~mutate(.x, .id = .y))
-# lm_eur_resid_cbcl <- lm_eur_cond_resid_cbcl_long %>%
-#   pivot_wider(names_from = .id, values_from = resid.conditional)
 
 ```
 
@@ -685,61 +703,36 @@ lm_resid_cbcl <- lm_all_cond_resid_cbcl_long %>%
 
 ```{run grm and ancestry pc for all ksads outcomes, r}
 
-## run lin reg for each outcomes for each ancestry group ####
+## run lin reg for each ksads outcome ####
 
-#for year 4 did not converge for afr (n=2) or amadmix (n=3) adhd prob bc too few cases
-# ksads_outcome_list <- c("adhd","gad","mdd","ptsd")
 ksads_outcome_list <- c("adhd","gad","mdd","ptsd")
-# ancestry_list <- c("all","afr","amadmix","eur")
-# ancestry_data_list <- c("all_yr4_data_reordered",
-#                         "afr_yr4_data_reordered",
-#                         "amadmix_yr4_data_reordered",
-#                         "eur_yr4_data_reordered")
-# grm_list <- c("all_grm_sparse_subsetted","afr_grm_sparse_subsetted",
-#               "amadmix_grm_sparse_subsetted","eur_grm_sparse_subsetted")
 
-# for (ancestry in ancestry_list) {
 lm_resid_ksads_list <- list() # initialize a list to store results  
 for (outcome in ksads_outcome_list) {
-  # Fit null models
   lm_model <- fitNullModel(all_yr4_data_reordered, 
                            outcome = outcome, 
                            covars = c(paste0("V", 1:8)), 
                            cov.mat = all_grm_sparse_subsetted, 
                            verbose = TRUE,
                            family = "binomial")
-
-  # Store the fixef component with the first column as the outcome and variables
   lm_resid_ksads_list[[outcome]] <- lm_model$fit %>%
                               rownames_to_column("id") %>%
                               select(c(id,resid.conditional))
-  # assign(paste0("lm_",ancestry,"_ksads_results"),lm_cond_resid)
 }
-# }
 
-## make long and wide dataframes for residuals for each ancestry group ####
+## make one data frame with residuals for all ksads results
 lm_all_cond_resid_ksads_long <- imap_dfr(lm_resid_ksads_list, ~mutate(.x, .id = .y))
 lm_resid_ksads <- lm_all_cond_resid_ksads_long %>%
   pivot_wider(names_from = .id, values_from = resid.conditional)
-# lm_afr_cond_resid_ksads_long <- imap_dfr(lm_afr_ksads_results, ~mutate(.x, .id = .y))
-# lm_afr_resid_ksads <- lm_afr_cond_resid_ksads_long %>%
-#   pivot_wider(names_from = .id, values_from = resid.conditional)
-# lm_amadmix_cond_resid_ksads_long <- imap_dfr(lm_amadmix_ksads_results, ~mutate(.x, .id = .y))
-# lm_amadmix_resid_ksads <- lm_amadmix_cond_resid_ksads_long %>%
-#   pivot_wider(names_from = .id, values_from = resid.conditional)
-# lm_eur_cond_resid_ksads_long <- imap_dfr(lm_eur_ksads_results, ~mutate(.x, .id = .y))
-# lm_eur_resid_ksads <- lm_eur_cond_resid_ksads_long %>%
-#   pivot_wider(names_from = .id, values_from = resid.conditional)
 
 ```
-
 
 ### Run regression for PRS and covariates for CBCL outcomes at yr4
 
 ``` {run regression for prs and covariates for cbcl, r}
 
 ## subset data for regression, combine with residuals from last regression ####
-yr4_reg_all_data <- yr4_data %>%
+yr4_reg_data <- yr4_data %>%
                 select(c("src_subject_id","prs_all_mhc_val",
                          "demo_gender_id_v2_l",
                          "income_to_needs","site","interview_age",
@@ -773,36 +766,36 @@ yr4_reg_all_data <- yr4_data %>%
                   raw_k_mdd = mdd,
                   raw_k_ptsd = ptsd
                 ) %>%
-        mutate(gender = case_when(gender == 1 ~ "cism",
-                                  gender == 2 ~ "cisf",
-                                  gender == 3 ~ "gnc", #trans m
-                                  gender == 4 ~ "gnc", #trans f
-                                  gender == 5 ~ "gnc", #genderqueer
-                                  gender == 6 ~ "gnc", #other
-                                  gender == 777 ~ NA,
-                                  gender == 999 ~ NA,
-
-        )) %>%
-        left_join(lm_resid_cbcl,by="id") %>%
-        left_join(lm_resid_ksads,by="id") %>%
-        rename(
-                res_c_aggress = cbcl_scr_syn_aggressive_t,
-                res_c_attn = cbcl_scr_syn_attention_t,
-                res_c_anxdep = cbcl_scr_syn_anxdep_t,
-                res_c_ext = cbcl_scr_syn_external_t,
-                res_c_int = cbcl_scr_syn_internal_t,
-                res_c_rule = cbcl_scr_syn_rulebreak_t,
-                res_c_social = cbcl_scr_syn_social_t,
-                res_c_somatic = cbcl_scr_syn_somatic_t,
-                res_c_thought = cbcl_scr_syn_thought_t,
-                res_c_total = cbcl_scr_syn_totprob_t,
-                res_c_withdep = cbcl_scr_syn_withdep_t,
-                res_k_adhd = adhd,
-                res_k_gad = gad,
-                res_k_mdd = mdd,
-                res_k_ptsd = ptsd
-        )
-
+                mutate(gender = case_when(gender == 1 ~ "cism",
+                                          gender == 2 ~ "cisf",
+                                          gender == 3 ~ "gnc", #trans m
+                                          gender == 4 ~ "gnc", #trans f
+                                          gender == 5 ~ "gnc", #genderqueer
+                                          gender == 6 ~ "gnc", #other
+                                          gender == 777 ~ NA,
+                                          gender == 999 ~ NA,
+        
+                )) %>%
+                left_join(lm_resid_cbcl,by="id") %>%
+                left_join(lm_resid_ksads,by="id") %>%
+                rename(
+                        res_c_aggress = cbcl_scr_syn_aggressive_t,
+                        res_c_attn = cbcl_scr_syn_attention_t,
+                        res_c_anxdep = cbcl_scr_syn_anxdep_t,
+                        res_c_ext = cbcl_scr_syn_external_t,
+                        res_c_int = cbcl_scr_syn_internal_t,
+                        res_c_rule = cbcl_scr_syn_rulebreak_t,
+                        res_c_social = cbcl_scr_syn_social_t,
+                        res_c_somatic = cbcl_scr_syn_somatic_t,
+                        res_c_thought = cbcl_scr_syn_thought_t,
+                        res_c_total = cbcl_scr_syn_totprob_t,
+                        res_c_withdep = cbcl_scr_syn_withdep_t,
+                        res_k_adhd = adhd,
+                        res_k_gad = gad,
+                        res_k_mdd = mdd,
+                        res_k_ptsd = ptsd
+                ) %>%
+        
 ### dummy code, effect code, and cluster mean center categorical variables ####
 ## dummy
 # gender - cismale: gen_dum_cisf = 0, gen_dum_gnc = 0
@@ -818,70 +811,75 @@ yr4_reg_all_data <- yr4_data %>%
 # ancestry - amadmix: anc_eff_afr = -1, anc_eff_eur = -1
 # ancestry - afr: anc_eff_afr = 1, anc_eff_eur = 0
 # ancestry - eur: anc_eff_afr = 0, anc_eff_eur = 1
-yr4_reg_all_data <- yr4_reg_data %>%
-                  # dummy coding
-                  mutate(gen_dum_cisf = case_when(gender == "cism" ~ 0,
-                                                  gender == "cisf" ~ 1,
-                                                  gender == "gnc" ~ 0)) %>%
-                  mutate(gen_dum_gnc = case_when(gender == "cism" ~ 0,
-                                                  gender == "cisf" ~ 0,
-                                                  gender == "gnc" ~ 1)) %>%
-                  mutate(anc_dum_afr = case_when(ancestry == "AmAdmix" ~ 0,
-                                                 ancestry == "Afr" ~ 1,
-                                                 ancestry == "Eur" ~ 0)) %>%
-                  mutate(anc_dum_eur = case_when(ancestry == "AmAdmix" ~ 0,
-                                                 ancestry == "Afr" ~ 0,
-                                                 ancestry == "Eur" ~ 1)) %>%
-                  # effect coding
-                  mutate(gen_eff_cisf = case_when(gender == "cism" ~ -1,
-                                                  gender == "cisf" ~ 1,
-                                                  gender == "gnc" ~ 0)) %>%
-                  mutate(gen_eff_gnc = case_when(gender == "cism" ~ -1,
-                                                  gender == "cisf" ~ 0,
-                                                  gender == "gnc" ~ 1)) %>%
-                  mutate(anc_eff_afr = case_when(ancestry == "AmAdmix" ~ -1,
-                                                 ancestry == "Afr" ~ 1,
-                                                 ancestry == "Eur" ~ 0)) %>%
-                  mutate(anc_eff_eur = case_when(ancestry == "AmAdmix" ~ -1,
-                                                 ancestry == "Afr" ~ 0,
-                                                 ancestry == "Eur" ~ 1)) %>%
-                  # cluster mean center categorical predictors
-                  mutate(gen_cmc_cisf = as.numeric(center(gen_eff_cisf, 
-                                       type="CWC", cluster = site))) %>%
-                  mutate(gen_cmc_gnc = as.numeric(center(gen_eff_gnc, 
-                                       type="CWC", cluster = site))) %>%
-                  mutate(anc_cmc_afr = as.numeric(center(anc_eff_afr, 
-                                       type="CWC", cluster = site))) %>%
-                  mutate(anc_cmc_eur = as.numeric(center(anc_eff_eur, 
-                                       type="CWC", cluster = site))) %>%
-                  # cluster mean center continuous predictors
-                  mutate(cmc_prs = as.numeric(center(prs,type="CWC",cluster=site))) %>%
-                  mutate(cmc_age = as.numeric(center(age,type="CWC",cluster=site))) %>%
-                  mutate(cmc_income_to_needs = as.numeric(center(income_to_needs,
-                                                          type="CWC",cluster=site))) %>%
-                  # Z score continuous predictors ()
-                  mutate(zcmc_prs = cmc_prs) %>%
-                  mutate(zcmc_age = as.numeric(scale(cmc_age, scale=TRUE))) %>%
-                  mutate(zcmc_income = as.numeric(scale(cmc_income_to_needs, scale=TRUE))) 
 
-#reorder columns so easier to work with
-yr4_reg_data <- yr4_reg_all_data %>%
-                  select(id,site,prs,age,income_to_needs,gender,ancestry,
-                         zcmc_prs,zcmc_age,zcmc_income,
-                         gen_dum_cisf,gen_dum_gnc,
-                         gen_cmc_cisf,gen_cmc_gnc,
-                         anc_dum_afr,anc_dum_eur,
-                         anc_cmc_afr,anc_cmc_eur,
-                         res_c_total,res_c_ext,res_c_int,
-                         res_c_aggress,res_c_attn,res_c_anxdep,res_c_withdep,
-                         res_c_rule,res_c_social,res_c_somatic,res_c_thought,
-                         res_k_adhd,res_k_gad,res_k_mdd,res_k_ptsd,
-                         raw_c_total,raw_c_ext,raw_c_int,
-                         raw_c_aggress,raw_c_attn,raw_c_anxdep,raw_c_withdep,
-                         raw_c_rule,raw_c_social,raw_c_somatic,raw_c_thought,
-                         raw_k_adhd,raw_k_gad,raw_k_mdd,raw_k_ptsd
-                         )
-        
+                # dummy coding
+                mutate(gen_dum_cisf = case_when(gender == "cism" ~ 0,
+                                                gender == "cisf" ~ 1,
+                                                gender == "gnc" ~ 0)) %>%
+                mutate(gen_dum_gnc = case_when(gender == "cism" ~ 0,
+                                                gender == "cisf" ~ 0,
+                                                gender == "gnc" ~ 1)) %>%
+                mutate(anc_dum_afr = case_when(ancestry == "AmAdmix" ~ 0,
+                                               ancestry == "Afr" ~ 1,
+                                               ancestry == "Eur" ~ 0)) %>%
+                mutate(anc_dum_eur = case_when(ancestry == "AmAdmix" ~ 0,
+                                               ancestry == "Afr" ~ 0,
+                                               ancestry == "Eur" ~ 1)) %>%
+                # effect coding
+                mutate(gen_eff_cisf = case_when(gender == "cism" ~ -1,
+                                                gender == "cisf" ~ 1,
+                                                gender == "gnc" ~ 0)) %>%
+                mutate(gen_eff_gnc = case_when(gender == "cism" ~ -1,
+                                                gender == "cisf" ~ 0,
+                                                gender == "gnc" ~ 1)) %>%
+                # mutate(anc_eff_afr = as.numeric(car::recode(anc_dum_afr, "0=-1;1=1"))) %>% 
+                mutate(anc_eff_afr = case_when(ancestry == "AmAdmix" ~ -1,
+                                               ancestry == "Afr" ~ 1,
+                                               ancestry == "Eur" ~ 0)) %>%
+                mutate(anc_eff_eur = case_when(ancestry == "AmAdmix" ~ -1,
+                                               ancestry == "Afr" ~ 0,
+                                               ancestry == "Eur" ~ 1)) %>%
+                # cluster mean center categorical predictors
+                mutate(gen_cmc_cisf = as.numeric(center(gen_eff_cisf, 
+                                     type="CWC", cluster = site))) %>%
+                mutate(gen_cmc_gnc = as.numeric(center(gen_eff_gnc, 
+                                     type="CWC", cluster = site))) %>%
+                mutate(anc_cmc_afr = as.numeric(center(anc_eff_afr, 
+                                     type="CWC", cluster = site))) %>%
+                mutate(anc_cmc_eur = as.numeric(center(anc_eff_eur, 
+                                     type="CWC", cluster = site))) %>%
+                # cluster mean center continuous predictors
+                mutate(cmc_prs = as.numeric(center(prs,type="CWC",cluster=site))) %>%
+                mutate(cmc_age = as.numeric(center(age,type="CWC",cluster=site))) %>%
+                mutate(cmc_income_to_needs = as.numeric(center(income_to_needs,
+                                                        type="CWC",cluster=site))) %>%
+                # Z score continuous predictors ()
+                mutate(zcmc_prs = cmc_prs) %>%
+                mutate(zcmc_age = as.numeric(scale(cmc_age, scale=TRUE))) %>%
+                mutate(zcmc_income = as.numeric(scale(cmc_income_to_needs, scale=TRUE))) %>%
+
+                #reorder columns so easier to work with
+                select(id,site,prs,age,income_to_needs,gender,ancestry,
+                       zcmc_prs,zcmc_age,zcmc_income,
+                       gen_dum_cisf,gen_dum_gnc,
+                       gen_eff_cisf,gen_eff_gnc,
+                       gen_cmc_cisf,gen_cmc_gnc,
+                       anc_dum_afr,anc_dum_eur,
+                       anc_eff_afr,anc_eff_eur,
+                       anc_cmc_afr,anc_cmc_eur,
+                       res_c_total,res_c_ext,res_c_int,
+                       res_c_aggress,res_c_attn,res_c_anxdep,res_c_withdep,
+                       res_c_rule,res_c_social,res_c_somatic,res_c_thought,
+                       res_k_adhd,res_k_gad,res_k_mdd,res_k_ptsd,
+                       raw_c_total,raw_c_ext,raw_c_int,
+                       raw_c_aggress,raw_c_attn,raw_c_anxdep,raw_c_withdep,
+                       raw_c_rule,raw_c_social,raw_c_somatic,raw_c_thought,
+                       raw_k_adhd,raw_k_gad,raw_k_mdd,raw_k_ptsd
+                       )
+
+```
+
+``` {cbcl regressions,r}
 # Intercept-Only Model Estimation (for Y) ----
 cbcl_total_M0 <- lmer(res_c_total ~ 1 + (1|site), data=yr4_reg_data, REML=FALSE)
 summary(cbcl_total_M0)
@@ -918,14 +916,67 @@ ICC_prs <- cluster_var/(cluster_var + resid_var)
 ICC_prs
 
 # Modeling with Predictors ----
-## Random Intercept, Fixed Slopes ----
-cbcl_total_M1 <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
-                        # gen_cmc_cisf + gen_cmc_gnc + 
-                        # zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
-                        anc_cmc_afr + anc_cmc_eur +
+## Random Intercept, Fixed Slopes without interactions ----
+cbcl_total_M1a <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
                       (1|site),
                     data=yr4_reg_data, REML=FALSE)
-summary(cbcl_total_M1)
+summary(cbcl_total_M1a)
+
+## Random Intercept, Fixed Slopes with interactions ----
+cbcl_total_M1b <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+                        zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
+                      (1|site),
+                    data=yr4_reg_data, REML=FALSE)
+summary(cbcl_total_M1b)
+
+## Random Intercept, random slopes, random effects uncorrelated without interactions ----
+cbcl_total_M2a <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                      (1|site)+(0+zcmc_prs|site)+
+                      (0+zcmc_income|site)+(0+zcmc_age|site)+
+                      (0+gen_cmc_cisf|site)+(0+gen_cmc_gnc|site), #don't have enough to add more variables to random slope
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+summary(cbcl_total_M2a)
+
+## Random Intercept, random slopes, random effects uncorrelated with interactions ----
+cbcl_total_M2b <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+                        zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc + 
+                      (1|site)+(0+zcmc_prs|site)+
+                      (0+zcmc_income|site)+(0+zcmc_age|site)+
+                      (0+gen_cmc_cisf|site)+(0+gen_cmc_gnc|site), #don't have enough to add more variables to random slope
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+summary(cbcl_total_M2b)
+
+## Random Intercept, random slopes, random effects free to correlate without interactions ----
+cbcl_total_M2c <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                      (1+zcmc_prs+zcmc_income+zcmc_age+
+                        gen_cmc_cisf + gen_cmc_gnc |site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+summary(cbcl_total_M2c)
+
+## Random Intercept, random slopes, random effects free to correlate with interactions ----
+cbcl_total_M2d <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+                        zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc + 
+                      (1+zcmc_prs+zcmc_income+zcmc_age+
+                        gen_cmc_cisf + gen_cmc_gnc |site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+summary(cbcl_total_M2d)
+
+## Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
+anova(cbcl_total_M1a,cbcl_total_M1b,test="Chisq") 
+anova(cbcl_total_M1a,cbcl_total_M2a,test="Chisq") 
+anova(cbcl_total_M1a,cbcl_total_M2b,test="Chisq") 
+anova(cbcl_total_M1a,cbcl_total_M2c,test="Chisq") 
+# best fitting model is fixed slope without interactions
+
 
 
 ```
@@ -934,9 +985,15 @@ summary(cbcl_total_M1)
 
 
 
+EXPLORE RELATIONSHIP BETWEEN PRS AND INCOME TO NEEDS - SIG IXN WITH GENDER
 
-
-
+test <- lmer(income_to_needs ~ zcmc_prs + zcmc_age +
+                 gen_cmc_cisf + gen_cmc_gnc +
+                 zcmc_prs*zcmc_age +
+                 zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
+                 (1|site),
+             data=yr4_reg_data, REML=FALSE)
+summary(test)
 
 
 
