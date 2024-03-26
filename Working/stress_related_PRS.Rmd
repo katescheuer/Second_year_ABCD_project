@@ -977,7 +977,7 @@ anova(cbcl_total_M1a,cbcl_total_M2b,test="Chisq")
 anova(cbcl_total_M1a,cbcl_total_M2c,test="Chisq") 
 # best fitting model is fixed slope without interactions
 
-
+testing
 
 ```
 
