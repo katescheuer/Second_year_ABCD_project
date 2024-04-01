@@ -2165,8 +2165,88 @@ anova(ksads_ptsd_M1b,ksads_ptsd_M2b,test="Chisq") #1b is better
 
 ```
 
-EXPLORE RELATIONSHIP BETWEEN PRS AND INCOME TO NEEDS - SIG IXN WITH GENDER
 
+``` {effect of prs on covariates regressions, r}
+
+## Income-to-needs ----
+### Intercept-Only Model Estimation (for Y) ----
+zcmc_income_M0 <- lmer(zcmc_income ~ 1 + (1|site), data=yr4_reg_data, REML=FALSE)
+summary(zcmc_income_M0)
+
+### computing the ICC for Y using variance components ----
+variances = as.data.frame(VarCorr(zcmc_income_M0))
+cluster_var = variances[1,'vcov']
+resid_var = variances[2,'vcov']
+ICC_Y2 <- cluster_var/(cluster_var + resid_var)
+ICC_Y2 # 0% of the variance in income-to-needs is explained by site, which is
+       # good news because income-to-needs was cluster mean centered by site
+
+### Random Intercept, Fixed Slopes without interactions ----
+zcmc_income_M1a <- lmer(zcmc_income ~ zcmc_prs + zcmc_age + 
+                        gen_cmc_cisf + gen_cmc_gnc +
+                      (1|site),
+                    data=yr4_reg_data, REML=FALSE)
+summary(zcmc_income_M1a)
+
+### Random Intercept, Fixed Slopes with interactions ----
+zcmc_income_M1b <- lmer(zcmc_income ~ zcmc_prs + zcmc_age + 
+                        gen_cmc_cisf + gen_cmc_gnc +
+                        zcmc_prs*zcmc_age + zcmc_prs*
+                        zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
+                      (1|site),
+                    data=yr4_reg_data, REML=FALSE)
+summary(zcmc_income_M1b)
+
+### Random Intercept, random slopes, random effects uncorrelated without interactions ----
+zcmc_income_M2a <- lmer(zcmc_income ~ zcmc_prs + zcmc_age + 
+                        gen_cmc_cisf + gen_cmc_gnc +
+                      (1|site)+(0+zcmc_prs|site)+
+                      (0+zcmc_age|site)+
+                      (0+gen_cmc_cisf|site)+(0+gen_cmc_gnc|site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+summary(zcmc_income_M2a)
+
+### Random Intercept, random slopes, random effects uncorrelated with interactions ----
+zcmc_income_M2b <- lmer(zcmc_income ~ zcmc_prs + zcmc_age + 
+                        gen_cmc_cisf + gen_cmc_gnc +
+                        zcmc_prs*zcmc_age + zcmc_prs*
+                        zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc + 
+                      (1|site)+(0+zcmc_prs|site)+
+                      (0+zcmc_age|site)+
+                      (0+gen_cmc_cisf|site)+(0+gen_cmc_gnc|site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+summary(zcmc_income_M2b)
+
+### Random Intercept, random slopes, random effects free to correlate without interactions ----
+# failed to converge with either optimizer
+# zcmc_income_M2c <- lmer(zcmc_income ~ zcmc_prs + zcmc_age +
+#                         gen_cmc_cisf + gen_cmc_gnc +
+#                       (1+zcmc_prs+zcmc_age+
+#                         gen_cmc_cisf + gen_cmc_gnc |site),
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+# summary(zcmc_income_M2c)
+
+### Random Intercept, random slopes, random effects free to correlate with interactions ----
+# failed to converge with either optimizer
+# zcmc_income_M2d <- lmer(zcmc_income ~ zcmc_prs + zcmc_age +
+#                         gen_cmc_cisf + gen_cmc_gnc +
+#                         zcmc_prs*zcmc_age + zcmc_prs*
+#                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
+#                       (1+zcmc_prs+zcmc_age+
+#                         gen_cmc_cisf + gen_cmc_gnc |site),
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+# summary(zcmc_income_M2d)
+
+
+### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
+anova(zcmc_income_M1a,zcmc_income_M1b,test="Chisq")  #1b is better
+anova(zcmc_income_M1b,zcmc_income_M2a,test="Chisq") #1b is better
+anova(zcmc_income_M1b,zcmc_income_M2b,test="Chisq") #1b is better
+# best fitting model is fixed slope with interactions
+
+```
 
 
 
