@@ -667,9 +667,9 @@ eur_yr4_data_reordered <- eur_yr4_data_reordered %>% column_to_rownames(var="src
 
 ```
 
-### Run grm and ancestry pc for all CBCL outcomes at yr4
+### Run grm and all ancestry pc for all CBCL outcomes at yr4
 
-``` {run grm and ancestry pc for all cbcl outcomes, r}
+``` {run grm and all ancestry pc for all cbcl outcomes, r}
 
 ## run lin reg for each cbcl outcome ####
 cbcl_outcome_list <- c("cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
@@ -698,9 +698,9 @@ lm_resid_cbcl <- lm_all_cond_resid_cbcl_long %>%
 
 ```
 
-### Run grm and ancestry pc regressions for KSADS outcomes at yr4
+### Run grm and all ancestry pc regressions for KSADS outcomes at yr4
 
-```{run grm and ancestry pc for all ksads outcomes, r}
+```{run grm and all ancestry pc for all ksads outcomes, r}
 
 ## run lin reg for each ksads outcome ####
 
@@ -726,6 +726,126 @@ lm_resid_ksads <- lm_all_cond_resid_ksads_long %>%
 
 ```
 
+### Run grm and eur ancestry pc for all CBCL outcomes at yr4
+
+``` {run grm and eur ancestry pc for all cbcl outcomes, r}
+
+## run lin reg for each cbcl outcome ####
+cbcl_outcome_list <- c("cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
+                  "cbcl_scr_syn_anxdep_t","cbcl_scr_syn_external_t",
+                  "cbcl_scr_syn_internal_t","cbcl_scr_syn_rulebreak_t",
+                  "cbcl_scr_syn_social_t","cbcl_scr_syn_somatic_t",
+                  "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
+                  "cbcl_scr_syn_withdep_t" )
+
+lm_resid_cbcl_list <- list() 
+for (outcome in cbcl_outcome_list) {
+  lm_model <- fitNullModel(eur_yr4_data_reordered, 
+                           outcome = outcome, 
+                           covars = c(paste0("V", 1:8)), 
+                           cov.mat = eur_grm_sparse_subsetted, 
+                           verbose = TRUE)
+  lm_resid_cbcl_list[[outcome]] <- lm_model$fit %>%
+                              rownames_to_column("id") %>%
+                              select(c(id,resid.conditional))
+}
+
+## make one data frame with residuals for all cbcl results
+lm_eur_cond_resid_cbcl_long <- imap_dfr(lm_resid_cbcl_list, ~mutate(.x, .id = .y))
+lm_resid_cbcl <- lm_eur_cond_resid_cbcl_long %>%
+  pivot_wider(names_from = .id, values_from = resid.conditional)
+
+```
+
+### Run grm and eur ancestry pc regressions for KSADS outcomes at yr4
+
+```{run grm and eur ancestry pc for all ksads outcomes, r}
+
+## run lin reg for each ksads outcome ####
+
+ksads_outcome_list <- c("adhd","gad","mdd","ptsd")
+
+lm_resid_ksads_list <- list() # initialize a list to store results  
+for (outcome in ksads_outcome_list) {
+  lm_model <- fitNullModel(eur_yr4_data_reordered, 
+                           outcome = outcome, 
+                           covars = c(paste0("V", 1:8)), 
+                           cov.mat = eur_grm_sparse_subsetted, 
+                           verbose = TRUE,
+                           family = "binomial")
+  lm_resid_ksads_list[[outcome]] <- lm_model$fit %>%
+                              rownames_to_column("id") %>%
+                              select(c(id,resid.conditional))
+}
+
+## make one data frame with residuals for all ksads results
+lm_eur_cond_resid_ksads_long <- imap_dfr(lm_resid_ksads_list, ~mutate(.x, .id = .y))
+lm_resid_ksads <- lm_eur_cond_resid_ksads_long %>%
+  pivot_wider(names_from = .id, values_from = resid.conditional)
+
+```
+
+### Run grm and afr ancestry pc for all CBCL outcomes at yr4
+
+``` {run grm and afr ancestry pc for all cbcl outcomes, r}
+
+## run lin reg for each cbcl outcome ####
+cbcl_outcome_list <- c("cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
+                  "cbcl_scr_syn_anxdep_t","cbcl_scr_syn_external_t",
+                  "cbcl_scr_syn_internal_t","cbcl_scr_syn_rulebreak_t",
+                  "cbcl_scr_syn_social_t","cbcl_scr_syn_somatic_t",
+                  "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
+                  "cbcl_scr_syn_withdep_t" )
+
+lm_resid_cbcl_list <- list() 
+for (outcome in cbcl_outcome_list) {
+  lm_model <- fitNullModel(afr_yr4_data_reordered, 
+                           outcome = outcome, 
+                           covars = c(paste0("V", 1:8)), 
+                           cov.mat = afr_grm_sparse_subsetted, 
+                           verbose = TRUE)
+  lm_resid_cbcl_list[[outcome]] <- lm_model$fit %>%
+                              rownames_to_column("id") %>%
+                              select(c(id,resid.conditional))
+}
+
+## make one data frame with residuals for all cbcl results
+lm_afr_cond_resid_cbcl_long <- imap_dfr(lm_resid_cbcl_list, ~mutate(.x, .id = .y))
+lm_resid_cbcl <- lm_afr_cond_resid_cbcl_long %>%
+  pivot_wider(names_from = .id, values_from = resid.conditional)
+
+```
+
+### Run grm and afr ancestry pc regressions for KSADS outcomes at yr4
+
+```{run grm and afr ancestry pc for all ksads outcomes, r}
+
+## run lin reg for each ksads outcome ####
+
+# ksads_outcome_list <- c("adhd","gad","mdd","ptsd")
+## note: too few adhd subjects to run
+ksads_outcome_list <- c("gad","mdd","ptsd")
+
+lm_resid_ksads_list <- list() # initialize a list to store results  
+for (outcome in ksads_outcome_list) {
+  lm_model <- fitNullModel(afr_yr4_data_reordered, 
+                           outcome = outcome, 
+                           covars = c(paste0("V", 1:8)), 
+                           cov.mat = afr_grm_sparse_subsetted, 
+                           verbose = TRUE,
+                           family = "binomial")
+  lm_resid_ksads_list[[outcome]] <- lm_model$fit %>%
+                              rownames_to_column("id") %>%
+                              select(c(id,resid.conditional))
+}
+
+## make one data frame with residuals for all ksads results
+lm_afr_cond_resid_ksads_long <- imap_dfr(lm_resid_ksads_list, ~mutate(.x, .id = .y))
+lm_resid_ksads <- lm_afr_cond_resid_ksads_long %>%
+  pivot_wider(names_from = .id, values_from = resid.conditional)
+
+```
+
 ### Run regression for CBCL outcomes ~ PRS + income-to-needs + age + gender at yr4
 
 ``` {run regression for prs and covariates for cbcl, r}
@@ -742,7 +862,8 @@ yr4_reg_data <- yr4_data %>%
                          "cbcl_scr_syn_social_t","cbcl_scr_syn_somatic_t",
                          "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
                          "cbcl_scr_syn_withdep_t",
-                         "adhd","gad","mdd","ptsd",
+                         # "adhd", #remove for afr ancestry because too few subjects
+                         "gad","mdd","ptsd",
                          )) %>%
                 rename(
                   id = src_subject_id,
@@ -760,7 +881,7 @@ yr4_reg_data <- yr4_data %>%
                   raw_c_thought = cbcl_scr_syn_thought_t,
                   raw_c_total = cbcl_scr_syn_totprob_t,
                   raw_c_withdep = cbcl_scr_syn_withdep_t,
-                  raw_k_adhd = adhd,
+                  # raw_k_adhd = adhd,#remove for afr ancestry because too few subjects
                   raw_k_gad = gad,
                   raw_k_mdd = mdd,
                   raw_k_ptsd = ptsd
@@ -789,7 +910,7 @@ yr4_reg_data <- yr4_data %>%
                         res_c_thought = cbcl_scr_syn_thought_t,
                         res_c_total = cbcl_scr_syn_totprob_t,
                         res_c_withdep = cbcl_scr_syn_withdep_t,
-                        res_k_adhd = adhd,
+                        # res_k_adhd = adhd, #remove for afr ancestry because too few subjects
                         res_k_gad = gad,
                         res_k_mdd = mdd,
                         res_k_ptsd = ptsd
@@ -869,11 +990,13 @@ yr4_reg_data <- yr4_data %>%
                        res_c_total,res_c_ext,res_c_int,
                        res_c_aggress,res_c_attn,res_c_anxdep,res_c_withdep,
                        res_c_rule,res_c_social,res_c_somatic,res_c_thought,
-                       res_k_adhd,res_k_gad,res_k_mdd,res_k_ptsd,
+                       # res_k_adhd, #remove for afr ancestry because too few subjects
+                       res_k_gad,res_k_mdd,res_k_ptsd,
                        raw_c_total,raw_c_ext,raw_c_int,
                        raw_c_aggress,raw_c_attn,raw_c_anxdep,raw_c_withdep,
                        raw_c_rule,raw_c_social,raw_c_somatic,raw_c_thought,
-                       raw_k_adhd,raw_k_gad,raw_k_mdd,raw_k_ptsd
+                       # raw_k_adhd, #remove for afr ancestry because too few subjects
+                       raw_k_gad,raw_k_mdd,raw_k_ptsd
                        )
 
 ```
@@ -918,7 +1041,7 @@ variances = as.data.frame(VarCorr(cbcl_total_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0.3% of the variance in total problems is explained by site
+ICC_Y2 # 0.3% (all) or 0.6% (eur) or 0% (afr) of the variance in total problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_total_M1a <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -965,14 +1088,16 @@ cbcl_total_M2c <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(cbcl_total_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-cbcl_total_M2d <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
-                        gen_cmc_cisf + gen_cmc_gnc +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc + 
-                      (1+zcmc_prs+zcmc_income+zcmc_age+
-                        gen_cmc_cisf + gen_cmc_gnc |site),
-                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-summary(cbcl_total_M2d)
+# eur, afr: failed to converge with either optimizer
+# cbcl_total_M2d <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+#                         gen_cmc_cisf + gen_cmc_gnc +
+#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+#                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc + 
+#                       (1+zcmc_prs+zcmc_income+zcmc_age+
+#                         gen_cmc_cisf + gen_cmc_gnc |site),
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+# summary(cbcl_total_M2d)
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_total_M1a,cbcl_total_M1b,test="Chisq")  #1a is better
@@ -980,11 +1105,19 @@ anova(cbcl_total_M1a,cbcl_total_M2a,test="Chisq") #1a is better
 anova(cbcl_total_M1a,cbcl_total_M2b,test="Chisq") #1a is better
 anova(cbcl_total_M1a,cbcl_total_M2c,test="Chisq") #1a is better
 anova(cbcl_total_M1b,cbcl_total_M2b,test="Chisq") #1b is better than 2b
-anova(cbcl_total_M1b,cbcl_total_M2d,test="Chisq") #1b is better than 2d
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+# all, eur, afr: best fitting model is fixed slope without interactions
+# all, eur, afr: if want to include interactions, use fixed slope
 
-
+### Sig Results ----
+## All: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Eur: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Afr: 
+##      M1a: no sig
+##      M1b: no sig
 
 
 ```
@@ -1001,7 +1134,7 @@ variances = as.data.frame(VarCorr(cbcl_ext_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0.2% of the variance in Externalizing problems is explained by site
+ICC_Y2 # 0.2% (all) or 0.4% (eur) or 0% (afr) of the variance in Externalizing problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_ext_M1a <- lmer(res_c_ext ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1040,18 +1173,17 @@ cbcl_ext_M2b <- lmer(res_c_ext ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(cbcl_ext_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # cbcl_ext_M2c <- lmer(res_c_ext ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                       (1+zcmc_prs+zcmc_income+zcmc_age+
 #                         gen_cmc_cisf + gen_cmc_gnc |site),
 #                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
 #                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-# 
 # summary(cbcl_ext_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
+# all, afr: failed to converge with either optimizer
 # cbcl_ext_M2d <- lmer(res_c_ext ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
@@ -1067,9 +1199,24 @@ summary(cbcl_ext_M2b)
 anova(cbcl_ext_M1a,cbcl_ext_M1b,test="Chisq")  #1a is better
 anova(cbcl_ext_M1a,cbcl_ext_M2a,test="Chisq") #1a is better
 anova(cbcl_ext_M1a,cbcl_ext_M2b,test="Chisq") #1a is better
+# anova(cbcl_ext_M1a,cbcl_ext_M2d,test="Chisq") #1a is better
 anova(cbcl_ext_M1b,cbcl_ext_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+# anova(cbcl_ext_M1b,cbcl_ext_M2d,test="Chisq") #1b is better
+# all, eur, afr: best fitting model is fixed slope without interactions
+# all, eur, afr: if want to include interactions, use fixed slope
+
+
+### Sig Results ----
+## All: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Eur: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Afr: 
+##      M1a: no sig
+##      M1b: no sig
+
 
 ```
 
@@ -1085,7 +1232,7 @@ variances = as.data.frame(VarCorr(cbcl_int_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0.2% of the variance in internalizing problems is explained by site
+ICC_Y2 # 0.2% (all, eur) or 0% (afr) of the variance in internalizing problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_int_M1a <- lmer(res_c_int ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1132,16 +1279,16 @@ cbcl_int_M2c <- lmer(res_c_int ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(cbcl_int_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
-# cbcl_int_M2d <- lmer(res_c_int ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         gen_cmc_cisf + gen_cmc_gnc +
-#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-#                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc + 
-#                       (1+zcmc_prs+zcmc_income+zcmc_age+
-#                         gen_cmc_cisf + gen_cmc_gnc |site),
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-# summary(cbcl_int_M2d)
+# all: failed to converge with either optimizer
+cbcl_int_M2d <- lmer(res_c_int ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+                        zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
+                      (1+zcmc_prs+zcmc_income+zcmc_age+
+                        gen_cmc_cisf + gen_cmc_gnc |site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+summary(cbcl_int_M2d)
 
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
@@ -1149,9 +1296,24 @@ anova(cbcl_int_M1a,cbcl_int_M1b,test="Chisq")  #1a is better
 anova(cbcl_int_M1a,cbcl_int_M2a,test="Chisq") #1a is better
 anova(cbcl_int_M1a,cbcl_int_M2b,test="Chisq") #1a is better
 anova(cbcl_int_M1a,cbcl_int_M2c,test="Chisq") #1a is better
+anova(cbcl_int_M1a,cbcl_int_M2d,test="Chisq") #1a is better
 anova(cbcl_int_M1b,cbcl_int_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+anova(cbcl_int_M1b,cbcl_int_M2d,test="Chisq") #1b is better
+# all, eur, afr: best fitting model is fixed slope without interactions
+# all, eur, afr: if want to include interactions, use fixed slope
+
+
+### Sig Results ----
+## All: 
+##      M1a: cisf, gnc (income: p = 0.0579)
+##      M1b: income (p = 0.0492), cisf, gnc
+## Eur: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Afr: 
+##      M1a: cisf (p = 0.0407), gnc (p = 0.0396)
+##      M1b: no sig (cisf: p = 0.0620, gnc: p = 0.0646)
+
 
 ```
 
@@ -1167,7 +1329,7 @@ variances = as.data.frame(VarCorr(cbcl_aggress_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0.1% of the variance in aggression problems is explained by site
+ICC_Y2 # 0.1% (all) or 0.04% (eur) or 0% (afr) of the variance in aggression problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_aggress_M1a <- lmer(res_c_aggress ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1206,17 +1368,17 @@ cbcl_aggress_M2b <- lmer(res_c_aggress ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(cbcl_aggress_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-cbcl_aggress_M2c <- lmer(res_c_aggress ~ zcmc_prs + zcmc_age + zcmc_income +
-                        gen_cmc_cisf + gen_cmc_gnc +
-                      (1+zcmc_prs+zcmc_income+zcmc_age+
-                        gen_cmc_cisf + gen_cmc_gnc |site),
-                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-
-summary(cbcl_aggress_M2c)
+# afr: failed to converge with either optimizer
+# cbcl_aggress_M2c <- lmer(res_c_aggress ~ zcmc_prs + zcmc_age + zcmc_income +
+#                         gen_cmc_cisf + gen_cmc_gnc +
+#                       (1+zcmc_prs+zcmc_income+zcmc_age+
+#                         gen_cmc_cisf + gen_cmc_gnc |site),
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+# summary(cbcl_aggress_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # cbcl_aggress_M2d <- lmer(res_c_aggress ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
@@ -1234,8 +1396,21 @@ anova(cbcl_aggress_M1a,cbcl_aggress_M2a,test="Chisq") #1a is better
 anova(cbcl_aggress_M1a,cbcl_aggress_M2b,test="Chisq") #1a is better
 anova(cbcl_aggress_M1a,cbcl_aggress_M2c,test="Chisq") #1a is better
 anova(cbcl_aggress_M1b,cbcl_aggress_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+# all, eur, afr: best fitting model is fixed slope without interactions
+# all, eur, afr: if want to include interactions, use fixed slope
+
+
+### Sig Results ----
+## All: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Eur: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Afr: 
+##      M1a: no sig
+##      M1b: no sig
+
 
 ```
 
@@ -1251,7 +1426,7 @@ variances = as.data.frame(VarCorr(cbcl_attn_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0.1% of the variance in attention problems is explained by site
+ICC_Y2 # 0.1% (all) or 0% (eur, afr) of the variance in attention problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_attn_M1a <- lmer(res_c_attn ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1290,7 +1465,7 @@ cbcl_attn_M2b <- lmer(res_c_attn ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(cbcl_attn_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # cbcl_attn_M2c <- lmer(res_c_attn ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                       (1+zcmc_prs+zcmc_income+zcmc_age+
@@ -1300,7 +1475,7 @@ summary(cbcl_attn_M2b)
 # summary(cbcl_attn_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # cbcl_attn_M2d <- lmer(res_c_attn ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
@@ -1317,8 +1492,21 @@ anova(cbcl_attn_M1a,cbcl_attn_M1b,test="Chisq")  #1a is better
 anova(cbcl_attn_M1a,cbcl_attn_M2a,test="Chisq") #1a is better
 anova(cbcl_attn_M1a,cbcl_attn_M2b,test="Chisq") #1a is better
 anova(cbcl_attn_M1b,cbcl_attn_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+# all, eur, afr: best fitting model is fixed slope without interactions
+# all, eur, afr: if want to include interactions, use fixed slope
+
+
+### Sig Results ----
+## All: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Eur: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Afr: 
+##      M1a: cisf (p = 0.0273), gnc (p = 0.0236)
+##      M1b: cisf (p = 0.00864), gnc (p = 0.00756)
+
 
 ```
 
@@ -1334,7 +1522,7 @@ variances = as.data.frame(VarCorr(cbcl_anxdep_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0.01% of the variance in anxious/depressed problems is explained by site
+ICC_Y2 # 0.01% (all) or 0% (eur, afr) of the variance in anxious/depressed problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_anxdep_M1a <- lmer(res_c_anxdep ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1373,18 +1561,17 @@ cbcl_anxdep_M2b <- lmer(res_c_anxdep ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(cbcl_anxdep_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# failed to converge with either optimizer
+# all, afr: failed to converge with either optimizer
 # cbcl_anxdep_M2c <- lmer(res_c_anxdep ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                       (1+zcmc_prs+zcmc_income+zcmc_age+
 #                         gen_cmc_cisf + gen_cmc_gnc |site),
 #                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
 #                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-# 
 # summary(cbcl_anxdep_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
+# all, afr: failed to converge with either optimizer
 # cbcl_anxdep_M2d <- lmer(res_c_anxdep ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
@@ -1400,9 +1587,28 @@ summary(cbcl_anxdep_M2b)
 anova(cbcl_anxdep_M1a,cbcl_anxdep_M1b,test="Chisq")  #1a is better
 anova(cbcl_anxdep_M1a,cbcl_anxdep_M2a,test="Chisq") #1a is better
 anova(cbcl_anxdep_M1a,cbcl_anxdep_M2b,test="Chisq") #1a is better
+anova(cbcl_anxdep_M1a,cbcl_anxdep_M2c,test="Chisq") #1a is better
+anova(cbcl_anxdep_M1a,cbcl_anxdep_M2d,test="Chisq") #1a is better
 anova(cbcl_anxdep_M1b,cbcl_anxdep_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+anova(cbcl_anxdep_M1b,cbcl_anxdep_M2d,test="Chisq") #1b is better
+# all, eur, afr: best fitting model is fixed slope without interactions
+# all, eur, afr: if want to include interactions, use fixed slope
+
+
+
+### Sig Results ----
+## All: 
+##      M1a: cisf, gnc (income: p = 0.228)
+##      M1b: cisf, gnc, prs*gnc (p = 0.0454) (income: p = 0.1984)
+## Eur: 
+##      M1a: cisf, gnc (income: p = 0.06352)
+##      M1b: cisf, gnc (income: p = 0.052216)
+## Afr: 
+##      M1a: gnc (p = 0.0394) (cisf: p = 0.0527)
+##      M1b: cisf (p = 0.0207), gnc (p = 0.0164), prs*income (p = 0.0286)
+##           (prs: p = 0.8589, income: p = 0.3270)
+
+
 
 ```
 
@@ -1418,7 +1624,7 @@ variances = as.data.frame(VarCorr(cbcl_withdep_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0.3% of the variance in withdrawn/depressed problems is explained by site
+ICC_Y2 # 0.3% (all) or 0.5% (eur) or 0% (afr) of variance in withdrawn/depressed problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_withdep_M1a <- lmer(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1457,7 +1663,7 @@ cbcl_withdep_M2b <- lmer(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(cbcl_withdep_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# failed to converge with either optimizer
+# all, afr: failed to converge with either optimizer
 # cbcl_withdep_M2c <- lmer(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                       (1+zcmc_prs+zcmc_income+zcmc_age+
@@ -1467,14 +1673,15 @@ summary(cbcl_withdep_M2b)
 # summary(cbcl_withdep_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-cbcl_withdep_M2d <- lmer(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
-                        gen_cmc_cisf + gen_cmc_gnc +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
-                      (1+zcmc_prs+zcmc_income+zcmc_age+
-                        gen_cmc_cisf + gen_cmc_gnc |site),
-                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+# eur, afr: failed to converge with either optimizer
+# cbcl_withdep_M2d <- lmer(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
+#                         gen_cmc_cisf + gen_cmc_gnc +
+#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+#                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
+#                       (1+zcmc_prs+zcmc_income+zcmc_age+
+#                         gen_cmc_cisf + gen_cmc_gnc |site),
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
 # summary(cbcl_withdep_M2d)
 
 
@@ -1482,11 +1689,24 @@ cbcl_withdep_M2d <- lmer(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
 anova(cbcl_withdep_M1a,cbcl_withdep_M1b,test="Chisq")  #1a is better
 anova(cbcl_withdep_M1a,cbcl_withdep_M2a,test="Chisq") #1a is better
 anova(cbcl_withdep_M1a,cbcl_withdep_M2b,test="Chisq") #1a is better
-anova(cbcl_withdep_M1a,cbcl_withdep_M2d,test="Chisq") #1a is better
+anova(cbcl_withdep_M1a,cbcl_withdep_M2c,test="Chisq") #1a is better
+# anova(cbcl_withdep_M1a,cbcl_withdep_M2d,test="Chisq") #1a is better
 anova(cbcl_withdep_M1b,cbcl_withdep_M2b,test="Chisq") #1b is better
 anova(cbcl_withdep_M1b,cbcl_withdep_M2d,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+# all, eur, afr: best fitting model is fixed slope without interactions
+# all, eur, afr: if want to include interactions, use fixed slope
+
+### Sig Results ----
+## All: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc, prs*cisf (p = 0.0400), prs*gnc (p = 0.0134)
+## Eur: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc, prs*gnc (p=0.0224)
+## Afr: 
+##      M1a: no sig
+##      M1b: no sig
+
 
 ```
 
@@ -1502,7 +1722,7 @@ variances = as.data.frame(VarCorr(cbcl_rule_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0.04% of the variance in rule-breaking problems is explained by site
+ICC_Y2 # 0.04% (all) or 0.2% (eur) or 0% (afr) of the variance in rule-breaking problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_rule_M1a <- lmer(res_c_rule ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1541,7 +1761,7 @@ cbcl_rule_M2b <- lmer(res_c_rule ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(cbcl_rule_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # cbcl_rule_M2c <- lmer(res_c_rule ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                       (1+zcmc_prs+zcmc_income+zcmc_age+
@@ -1551,7 +1771,7 @@ summary(cbcl_rule_M2b)
 # summary(cbcl_rule_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # cbcl_rule_M2d <- lmer(res_c_rule ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
@@ -1568,8 +1788,19 @@ anova(cbcl_rule_M1a,cbcl_rule_M1b,test="Chisq")  #1a is better
 anova(cbcl_rule_M1a,cbcl_rule_M2a,test="Chisq") #1a is better
 anova(cbcl_rule_M1a,cbcl_rule_M2b,test="Chisq") #1a is better
 anova(cbcl_rule_M1b,cbcl_rule_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+# all, eur, afr: best fitting model is fixed slope without interactions
+# all, eur, afr: if want to include interactions, use fixed slope
+
+### Sig Results ----
+## All: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Eur: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Afr: 
+##      M1a: no sig
+##      M1b: no sig
 
 ```
 
@@ -1585,7 +1816,7 @@ variances = as.data.frame(VarCorr(cbcl_social_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0% of the variance in social problems is explained by site
+ICC_Y2 # 0% (all, eur, afr) of the variance in social problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_social_M1a <- lmer(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1624,35 +1855,51 @@ cbcl_social_M2b <- lmer(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(cbcl_social_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# failed to converge with either optimizer
-# cbcl_social_M2c <- lmer(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         gen_cmc_cisf + gen_cmc_gnc +
-#                       (1+zcmc_prs+zcmc_income+zcmc_age+
-#                         gen_cmc_cisf + gen_cmc_gnc |site),
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-# summary(cbcl_social_M2c)
+# all, eur: failed to converge with either optimizer
+cbcl_social_M2c <- lmer(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                      (1+zcmc_prs+zcmc_income+zcmc_age+
+                        gen_cmc_cisf + gen_cmc_gnc |site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+summary(cbcl_social_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
-# cbcl_social_M2d <- lmer(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         gen_cmc_cisf + gen_cmc_gnc +
-#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-#                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
-#                       (1+zcmc_prs+zcmc_income+zcmc_age+
-#                         gen_cmc_cisf + gen_cmc_gnc |site),
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-# summary(cbcl_social_M2d)
+# all, eur: failed to converge with either optimizer
+cbcl_social_M2d <- lmer(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+                        zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
+                      (1+zcmc_prs+zcmc_income+zcmc_age+
+                        gen_cmc_cisf + gen_cmc_gnc |site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+summary(cbcl_social_M2d)
 
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_social_M1a,cbcl_social_M1b,test="Chisq")  #1a is better
 anova(cbcl_social_M1a,cbcl_social_M2a,test="Chisq") #1a is better
 anova(cbcl_social_M1a,cbcl_social_M2b,test="Chisq") #1a is better
+anova(cbcl_social_M1a,cbcl_social_M2c,test="Chisq") #1a is better
+anova(cbcl_social_M1a,cbcl_social_M2d,test="Chisq") #1a is better
 anova(cbcl_social_M1b,cbcl_social_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+anova(cbcl_social_M1b,cbcl_social_M2d,test="Chisq") #1b is better
+# all, eur, afr: best fitting model is fixed slope without interactions
+# all, eur, afr: if want to include interactions, use fixed slope
+
+### Sig Results ----
+## All: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Eur: 
+##      M1a: income, cisf, gnc
+##      M1b: income, cisf, gnc
+## Afr: 
+##      M1a: no sig
+##      M1b: no sig
+
+
 
 ```
 
@@ -1668,7 +1915,7 @@ variances = as.data.frame(VarCorr(cbcl_somatic_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0.4% of the variance in somatic problems is explained by site
+ICC_Y2 # 0.4% (all) or 0.6% (eur) or 0.06% (afr) of the variance in somatic problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_somatic_M1a <- lmer(res_c_somatic ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1707,7 +1954,7 @@ cbcl_somatic_M2b <- lmer(res_c_somatic ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(cbcl_somatic_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # cbcl_somatic_M2c <- lmer(res_c_somatic ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                       (1+zcmc_prs+zcmc_income+zcmc_age+
@@ -1717,7 +1964,7 @@ summary(cbcl_somatic_M2b)
 # summary(cbcl_somatic_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # cbcl_somatic_M2d <- lmer(res_c_somatic ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
@@ -1734,8 +1981,20 @@ anova(cbcl_somatic_M1a,cbcl_somatic_M1b,test="Chisq")  #1a is better
 anova(cbcl_somatic_M1a,cbcl_somatic_M2a,test="Chisq") #1a is better
 anova(cbcl_somatic_M1a,cbcl_somatic_M2b,test="Chisq") #1a is better
 anova(cbcl_somatic_M1b,cbcl_somatic_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+# all, eur, afr: best fitting model is fixed slope without interactions
+# all, eur, afr: if want to include interactions, use fixed slope
+
+### Sig Results ----
+## All: 
+##      M1a: income, cisf, gnc, prs (p = 0.0363)
+##      M1b: income, cisf, gnc, prs (p = 0.0323)
+## Eur: 
+##      M1a: income, cisf, gnc (prs: p = 0.0861)
+##      M1b: income, cisf, gnc (prs: p = 0.0813)
+## Afr: 
+##      M1a: cisf (p = 0.00434), gnc (p = 0.00717)
+##      M1b: cisf (p = 0.00845), gnc (p = 0.01315)
+
 
 ```
 
@@ -1751,7 +2010,7 @@ variances = as.data.frame(VarCorr(cbcl_thought_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0% of the variance in thought problems is explained by site
+ICC_Y2 # 0% (all, eur, afr) of the variance in thought problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_thought_M1a <- lmer(res_c_thought ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1790,7 +2049,7 @@ cbcl_thought_M2b <- lmer(res_c_thought ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(cbcl_thought_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # cbcl_thought_M2c <- lmer(res_c_thought ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                       (1+zcmc_prs+zcmc_income+zcmc_age+
@@ -1800,7 +2059,7 @@ summary(cbcl_thought_M2b)
 # summary(cbcl_thought_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # cbcl_thought_M2d <- lmer(res_c_thought ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
@@ -1813,10 +2072,26 @@ summary(cbcl_thought_M2b)
 
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
-anova(cbcl_thought_M1a,cbcl_thought_M1b,test="Chisq")  #1b is better
-anova(cbcl_thought_M1b,cbcl_thought_M2a,test="Chisq") #1b is better
-anova(cbcl_thought_M1b,cbcl_thought_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope with interactions
+anova(cbcl_thought_M1a,cbcl_thought_M1b,test="Chisq")  #all, eur: 1b is better; afr: 1a is better
+anova(cbcl_thought_M1b,cbcl_thought_M2a,test="Chisq") #all, eur: 1b is better
+anova(cbcl_thought_M1b,cbcl_thought_M2b,test="Chisq") #all, eur: 1b is better
+anova(cbcl_thought_M1a,cbcl_thought_M2a,test="Chisq") #afr: 1a is better
+anova(cbcl_thought_M1a,cbcl_thought_M2b,test="Chisq") #afr: 1a is better
+# all, eur: best fitting model is fixed slope with interactions
+# afr: best fitting model is fixed slope without interactions
+# afr: if want to include interactions, use fixed slope
+
+
+### Sig Results ----
+## All: 
+##      M1b: income, cisf, gnc, prs (p = 0.00319), prs*income (p = 0.0370), 
+##           prs*cisf (p = 0.0375), prs*gnc (p = 0.0058)
+## Eur: 
+##      M1b: income, cisf, gnc, prs (p = 0.0224), prs*gnc (p = 0.0210)
+## Afr: 
+##      M1a: cisf (p = 0.0316), gnc (p = 0.0215)
+##      M1b: no sig (cisf: p = 0.2931, gnc: p = 0.2590)
+
 
 ```
 
@@ -1834,7 +2109,7 @@ variances = as.data.frame(VarCorr(ksads_adhd_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0% of the variance in adhd diagnoses is explained by site
+ICC_Y2 # 0% (all, eur) of the variance in adhd diagnoses is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 ksads_adhd_M1a <- lmer(res_k_adhd ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1901,8 +2176,17 @@ anova(ksads_adhd_M1a,ksads_adhd_M2c,test="Chisq") #1a is better
 anova(ksads_adhd_M1a,ksads_adhd_M2d,test="Chisq") #1a is better
 anova(ksads_adhd_M1b,ksads_adhd_M2b,test="Chisq") #1b is better
 anova(ksads_adhd_M1b,ksads_adhd_M2d,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+# all, eur: best fitting model is fixed slope without interactions
+# all, eur: if want to include interactions, use fixed slope
+
+### Sig Results ----
+## All: 
+##      M1a: no sig
+##      M1b: no sig
+## Eur: 
+##      M1a: no sig
+##      M1b: no sig
+## Afr: no results because too few subjects
 
 ```
 
@@ -1918,7 +2202,7 @@ variances = as.data.frame(VarCorr(ksads_gad_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0% of the variance in gad diagnoses is explained by site
+ICC_Y2 # 0% (all, eur, afr) of the variance in gad diagnoses is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 ksads_gad_M1a <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -1957,7 +2241,7 @@ ksads_gad_M2b <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(ksads_gad_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # ksads_gad_M2c <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                       (1+zcmc_prs+zcmc_income+zcmc_age+
@@ -1967,16 +2251,16 @@ summary(ksads_gad_M2b)
 # summary(ksads_gad_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
-# ksads_gad_M2d <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         gen_cmc_cisf + gen_cmc_gnc +
-#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-#                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
-#                       (1+zcmc_prs+zcmc_income+zcmc_age+
-#                         gen_cmc_cisf + gen_cmc_gnc |site),
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-# summary(ksads_gad_M2d)
+# all, eur: failed to converge with either optimizer
+ksads_gad_M2d <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+                        zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
+                      (1+zcmc_prs+zcmc_income+zcmc_age+
+                        gen_cmc_cisf + gen_cmc_gnc |site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+summary(ksads_gad_M2d)
 
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
@@ -1984,8 +2268,22 @@ anova(ksads_gad_M1a,ksads_gad_M1b,test="Chisq")  #1a  is better
 anova(ksads_gad_M1a,ksads_gad_M2a,test="Chisq") #1a is better
 anova(ksads_gad_M1a,ksads_gad_M2b,test="Chisq") #1a is better
 anova(ksads_gad_M1b,ksads_gad_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+anova(ksads_gad_M1b,ksads_gad_M2d,test="Chisq") #1b is better
+# all, eur, afr: best fitting model is fixed slope without interactions
+# all, eur, afr: if want to include interactions, use fixed slope
+
+
+### Sig Results ----
+## All: 
+##      M1a: cisf, gnc (income: p = 0.2466)
+##      M1b: cisf, gnc (income: p = 0.2231)
+## Eur: 
+##      M1a: cisf, gnc (income: p = 0.3525)
+##      M1b: icisf, gnc, prs*gnc (p = 0.04139) (income: p = 0.2572)
+## Afr: 
+##      M1a: no sig
+##      M1b: no sig
+
 
 ```
 
@@ -2001,7 +2299,7 @@ variances = as.data.frame(VarCorr(ksads_mdd_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0.2% of the variance in mdd diagnoses is explained by site
+ICC_Y2 # 0.2% (all) or 0.1% (eur) or 0% (afr) of the variance in mdd diagnoses is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 ksads_mdd_M1a <- lmer(res_k_mdd ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -2040,7 +2338,7 @@ ksads_mdd_M2b <- lmer(res_k_mdd ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(ksads_mdd_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # ksads_mdd_M2c <- lmer(res_k_mdd ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                       (1+zcmc_prs+zcmc_income+zcmc_age+
@@ -2050,7 +2348,7 @@ summary(ksads_mdd_M2b)
 # summary(ksads_mdd_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
+# all, eur, afr: failed to converge with either optimizer
 # ksads_mdd_M2d <- lmer(res_k_mdd ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
@@ -2064,11 +2362,26 @@ summary(ksads_mdd_M2b)
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(ksads_mdd_M1a,ksads_mdd_M1b,test="Chisq")  #1a  is better
-anova(ksads_mdd_M1a,ksads_mdd_M2a,test="Chisq") #1a is better
-anova(ksads_mdd_M1a,ksads_mdd_M2b,test="Chisq") #1a is better
-anova(ksads_mdd_M1b,ksads_mdd_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+anova(ksads_mdd_M1a,ksads_mdd_M2a,test="Chisq") #all, afr: 1a is better; eur: 2a is better
+anova(ksads_mdd_M1a,ksads_mdd_M2b,test="Chisq") #all: 1a is better
+anova(ksads_mdd_M1b,ksads_mdd_M2b,test="Chisq") #all, afr: 1b is better
+anova(ksads_mdd_M2a,ksads_mdd_M2b,test="Chisq") #eur: 2b is better
+# all, afr: best fitting model is fixed slope without interactions
+# all, afr: if want to include interactions, use fixed slope
+# eur: best fitting model is variable slope with interactions
+
+
+### Sig Results ----
+## All: 
+##      M1a: cisf, gnc (income = 0.4295)
+##      M1b: cisf, gnc, prs*gnc (p = 0.0375) (income: p = 0.3840)
+## Eur: 
+##      M2b: gnc, prs*cisf (p = 0.0364), prs*gnc (p = 0.0009) 
+##          (cisf: p = 0.1280, income: p = 0.7637)
+## Afr: 
+##      M1a: no sig (gnc: p = 0.1456)
+##      M1b: gnc (p = 0.0317)
+
 
 ```
 
@@ -2084,7 +2397,7 @@ variances = as.data.frame(VarCorr(ksads_ptsd_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # 0% of the variance in ptsd diagnoses is explained by site
+ICC_Y2 # 0% (all, eur, afr) of the variance in ptsd diagnoses is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
 ksads_ptsd_M1a <- lmer(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
@@ -2123,35 +2436,52 @@ ksads_ptsd_M2b <- lmer(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
 summary(ksads_ptsd_M2b)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# failed to converge with either optimizer
-# ksads_ptsd_M2c <- lmer(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         gen_cmc_cisf + gen_cmc_gnc +
-#                       (1+zcmc_prs+zcmc_income+zcmc_age+
-#                         gen_cmc_cisf + gen_cmc_gnc |site),
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-# summary(ksads_ptsd_M2c)
+# all: failed to converge with either optimizer
+ksads_ptsd_M2c <- lmer(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                      (1+zcmc_prs+zcmc_income+zcmc_age+
+                        gen_cmc_cisf + gen_cmc_gnc |site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+summary(ksads_ptsd_M2c)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# failed to converge with either optimizer
-# ksads_ptsd_M2d <- lmer(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         gen_cmc_cisf + gen_cmc_gnc +
-#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-#                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
-#                       (1+zcmc_prs+zcmc_income+zcmc_age+
-#                         gen_cmc_cisf + gen_cmc_gnc |site),
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-# summary(ksads_ptsd_M2d)
+# all, eur: failed to converge with either optimizer
+ksads_ptsd_M2d <- lmer(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+                        zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
+                      (1+zcmc_prs+zcmc_income+zcmc_age+
+                        gen_cmc_cisf + gen_cmc_gnc |site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+summary(ksads_ptsd_M2d)
 
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
-anova(ksads_ptsd_M1a,ksads_ptsd_M1b,test="Chisq")  #1a  is better
-anova(ksads_ptsd_M1a,ksads_ptsd_M2a,test="Chisq") #1a is better
-anova(ksads_ptsd_M1a,ksads_ptsd_M2b,test="Chisq") #1a is better
-anova(ksads_ptsd_M1b,ksads_ptsd_M2b,test="Chisq") #1b is better
-# best fitting model is fixed slope without interactions
-# if want to include interactions, use fixed slope
+anova(ksads_ptsd_M1a,ksads_ptsd_M1b,test="Chisq")  #all, eur: 1a is better; afr: 1b is better
+anova(ksads_ptsd_M1a,ksads_ptsd_M2a,test="Chisq") #all, eur: 1a is better
+anova(ksads_ptsd_M1a,ksads_ptsd_M2b,test="Chisq") #all, eur: 1a is better
+anova(ksads_ptsd_M1a,ksads_ptsd_M2c,test="Chisq") #eur: 1a is better
+anova(ksads_ptsd_M1b,ksads_ptsd_M2a,test="Chisq") #afr: 1b is better
+anova(ksads_ptsd_M1b,ksads_ptsd_M2b,test="Chisq") #afr: 2b is better
+anova(ksads_ptsd_M2b,ksads_ptsd_M2c,test="Chisq") #afr: 2b is better
+anova(ksads_ptsd_M2b,ksads_ptsd_M2d,test="Chisq") #afr: 2b is better
+anova(ksads_ptsd_M1b,ksads_ptsd_M2b,test="Chisq") #all, eur: 1b is better
+# all, eur: best fitting model is fixed slope without interactions
+# all, eur: if want to include interactions, use fixed slope
+# afr: best fitting model is variable slope with interactions
+
+
+### Sig Results ----
+## All: 
+##      M1a: income, gnc (cisf: p = 0.3958)
+##      M1b: income, gnc (cisf: 0.2736)
+## Eur: 
+##      M1a: income (p = 0.00004) (cisf: p = 0.786, gnc = 0.146)
+##      M1b: income (p = 0.00003) (cisf: p = 0.6412, gnc = 0.0967)
+## Afr: 
+##      M2b: prs*income (p = 0.0002) (prs: p = 0.6350, income: p = 0.8570)
 
 ```
 
