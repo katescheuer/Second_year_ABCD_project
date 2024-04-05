@@ -51,22 +51,22 @@ data_raw <- meta %>%
                       by=c("src_subject_id","eventname")) %>%
             left_join(select(life_events_youth,
                              c("src_subject_id","eventname",
-                               "ple_separ_past_yr_y","ple_separ_past_yr_y",
-                               "ple_jail_past_yr_y","ple_jail_past_yr_y",
-                               "ple_mh_past_yr_y","ple_mh_past_yr_y",
-                               "ple_suicide_past_yr_y","ple_suicide_past_yr_y",
+                               "ple_separ_y","ple_separ_past_yr_y",
+                               "ple_jail_y","ple_jail_past_yr_y",
+                               "ple_mh_y","ple_mh_past_yr_y",
+                               "ple_suicide_y","ple_suicide_past_yr_y",
                                "ple_who_y___1",
-                               "ple_homeless_past_yr_y","ple_homeless_past_yr_y",
-                               "ple_victim_past_yr_y","ple_victim_past_yr_y",
-                               "ple_sud_past_yr_y","ple_sud_past_yr_y",
-                               "ple_foster_care_past_yr_y","ple_foster_care_past_yr_y",
-                               "ple_died_past_yr_y","ple_died_past_yr_y",
-                               "ple_deported_past_yr_y","ple_deported_past_yr_y",
-                               "ple_ill_past_yr_y","ple_ill_past_yr_y",
-                               "ple_shot_past_yr_y","ple_shot_past_yr_y",
-                               "ple_hit_past_yr_y","ple_hit_past_yr_y",
-                               "ple_lockdown_past_yr_y","ple_lockdown_past_yr_y",
-                               "ple_argue_past_yr_y","ple_argue_past_yr_y"
+                               "ple_homeless_y","ple_homeless_past_yr_y",
+                               "ple_victim_y","ple_victim_past_yr_y",
+                               "ple_sud_y","ple_sud_past_yr_y",
+                               "ple_foster_care_y","ple_foster_care_past_yr_y",
+                               "ple_died_y","ple_died_past_yr_y",
+                               "ple_deported_y","ple_deported_past_yr_y",
+                               "ple_ill_y","ple_ill_past_yr_y",
+                               "ple_shot_y","ple_shot_past_yr_y",
+                               "ple_hit_y","ple_hit_past_yr_y",
+                               "ple_lockdown_y","ple_lockdown_past_yr_y",
+                               "ple_argue_y","ple_argue_past_yr_y"
                                )
                                ),
                       by=c("src_subject_id","eventname")) %>%
@@ -83,140 +83,263 @@ data_raw <- meta %>%
                                "dim_matrix_q1","dim_matrix_q2","dim_matrix_q3")),
                       by=c("src_subject_id","eventname"))
 
-yr4_ids <- data_raw %>% 
-           filter(eventname=="4_year_follow_up_y_arm_1") %>%
-           select(src_subject_id) 
-  
-baseline_ids_all <- data_raw %>% 
-           filter(eventname=="baseline_year_1_arm_1") %>%
-           select(src_subject_id) 
-
-baseline_ids_keep <- anti_join(baseline_ids_all,yr4_ids,by="src_subject_id")
-
 ### divide separate temporarily into year 4 and baseline/year 1
 data_base_raw <- data_raw %>% filter(eventname == "baseline_year_1_arm_1")
 data_yr1_raw <- data_raw %>% filter(eventname == "1_year_follow_up_y_arm_1")
 data_yr4_raw <- data_raw %>% filter(eventname == "4_year_follow_up_y_arm_1")
 
-data_yr1 <- data_yr1_raw %>%
-          mutate(sep_divorce_base_p = case_when(
-          # at yr 1 parent says event occurred ever but not past yr (so baseline)
-          ple_separ_p==1 & ple_separ_past_yr_p==0 ~ 1,
+### make adverse event columns for year 4 data
+data_yr4 <- data_yr4_raw %>%
+          mutate(sep_divorce = case_when(
+          # at yr 4 parent says event occurred ever
+          ple_separ_p==1 ~ 1,
+          # at yr 1 youth says event occurred ever
+          ple_separ_y==1 ~ 1,
           # at yr 1 parent says never happened
           ple_separ_p==0 ~ 0,
-          # at yr 1 question not asked
+          # at yr 1 youth says never happened
+          ple_separ_y==0 ~ 0,
+          # at yr 1 question not asked to parent
+          is.na(ple_separ_p) ~ NA,
+          # at yr 1 question not asked to youth
           is.na(ple_separ_p) ~ NA
         )) %>%
-          mutate(family_jail_base_p = case_when(
-          ple_jail_p==1 & ple_jail_past_yr_p==0 ~ 1,
-          ple_jail_p==0 ~ 0,
-          is.na(ple_jail_p) ~ NA
+          mutate(family_jail = case_when(
+          ple_jail_p==1 ~ 1,ple_jail_y==1 ~ 1,
+          ple_jail_p==0 ~ 0,ple_jail_y==0 ~ 0,
+          is.na(ple_jail_p) ~ NA,is.na(ple_jail_y) ~ NA
         )) %>%
-          mutate(family_mental_ill_base_p = case_when(
-          ple_mh_p==1 & ple_mh_past_yr_p==0 ~ 1,
-          ple_mh_p==0 ~ 0,
-          is.na(ple_mh_p) ~ NA
+          mutate(family_mental_ill = case_when(
+          ple_mh_p==1 ~ 1,ple_mh_y==1 ~ 1,
+          # youth said family member died by suicide but not in the last year
+          ple_suicide_y==1 & ple_who_y___1==1 ~ 1,
+          ple_mh_p==0 ~ 0,ple_mh_y==0 ~ 0,
+          ple_suicide_y==0 ~ 0,
+          is.na(ple_mh_p) ~ NA,is.na(ple_mh_y) ~ NA,
+          is.na(ple_suicide_y) ~ NA
         )) %>%
-          mutate(basic_needs_base_p = case_when(
-          ple_homeless_p==1 & ple_homeless_past_yr_p==0 ~ 1,
-          ple_homeless_p==0 ~ 0,
-          is.na(ple_homeless_p) ~ NA
+          mutate(basic_needs = case_when(
+          ple_homeless_p==1 ~ 1,ple_homeless_y==1 ~ 1,
+          ple_homeless_p==0 ~ 0,ple_homeless_y==0 ~ 0,
+          is.na(ple_homeless_p) ~ NA,is.na(ple_homeless_y) ~ NA
         )) %>%
-          mutate(physical_harm_base_p = case_when(
-          ple_victim_p==1 & ple_victim_past_yr_p==0 ~ 1,
-          ple_victim_p==0 ~ 0,
-          is.na(ple_victim_p) ~ NA
+          mutate(physical_harm = case_when(
+          ple_victim_p==1 ~ 1,ple_victim_y==1 ~ 1,
+          ple_victim_p==0 ~ 0,ple_victim_y==0 ~ 0,
+          is.na(ple_victim_p) ~ NA,is.na(ple_victim_y) ~ NA
         )) %>%
-          mutate(family_sud_base_p = case_when(
-          ple_sud_p==1 & ple_sud_past_yr_p==0 ~ 1,
-          ple_sud_p==0 ~ 0,
-          is.na(ple_sud_p) ~ NA
+          mutate(family_sud = case_when(
+          ple_sud_p==1 ~ 1,ple_sud_y==1 ~ 1,
+          ple_sud_p==0 ~ 0,ple_sud_y==0 ~ 0,
+          is.na(ple_sud_p) ~ NA,is.na(ple_sud_y) ~ NA
         )) %>%
-          mutate(foster_base_p = case_when(
-          ple_foster_care_p==1 & ple_foster_care_past_yr_p==0 ~ 1,
-          ple_foster_care_p==0 ~ 0,
-          is.na(ple_foster_care_p) ~ NA
+          mutate(foster = case_when(
+          ple_foster_care_p==1 ~ 1,ple_foster_care_y==1 ~ 1,
+          ple_foster_care_p==0 ~ 0,ple_foster_care_y==0 ~ 0,
+          is.na(ple_foster_care_p) ~ NA,is.na(ple_foster_care_y) ~ NA
         )) %>%
-          mutate(family_died_base_p = case_when(
-          ple_died_p==1 & ple_died_past_yr_p==0 ~ 1,
-          ple_died_p==0 ~ 0,
-          is.na(ple_died_p) ~ NA
+          mutate(family_died = case_when(
+          ple_died_p==1 ~ 1,ple_died_y==1 ~ 1,
+          ple_died_p==0 ~ 0,ple_died_y==0 ~ 0,
+          is.na(ple_died_p) ~ NA,is.na(ple_died_y) ~ NA
         )) %>%
-          mutate(deportation_base_p = case_when(
-          ple_deported_p==1 & ple_deported_past_yr_p==0 ~ 1,
-          ple_deported_p==0 ~ 0,
-          is.na(ple_deported_p) ~ NA
+          mutate(deportation = case_when(
+          ple_deported_p==1 ~ 1,ple_deported_y==1 ~ 1,
+          ple_deported_p==0 ~ 0,ple_deported_y==0 ~ 0,
+          is.na(ple_deported_p) ~ NA,is.na(ple_deported_y) ~ NA
         )) %>%
-          mutate(sick_base_p = case_when(
-          ple_ill_p==1 & ple_ill_past_yr_p==0 ~ 1,
-          ple_ill_p==0 ~ 0,
-          is.na(ple_ill_p) ~ NA
+          mutate(sick = case_when(
+          ple_ill_p==1 ~ 1,ple_ill_y==1 ~ 1,
+          ple_ill_p==0 ~ 0,ple_ill_y==0 ~ 0,
+          is.na(ple_ill_p) ~ NA,is.na(ple_ill_y) ~ NA
         )) %>%
-          mutate(neighborhood_violence_base_p = case_when(
-          ple_shot_p==1 & ple_shot_past_yr_p==0 ~ 1,
-          ple_hit_p==1 & ple_hit_past_yr_p==0 ~ 1,
-          ple_lockdown_p==1 & ple_lockdown_past_yr_p==0 ~ 1,
-          ple_shot_p==0 ~ 0,
-          ple_hit_p==0 ~ 0,
-          ple_lockdown_p==0 ~ 0,
-          is.na(ple_shot_p) ~ NA,
-          is.na(ple_hit_p) ~ NA,
-          is.na(ple_lockdown_p) ~ NA
+          mutate(neighborhood_violence = case_when(
+          ple_shot_p==1 ~ 1,ple_shot_y==1 ~ 1,
+          ple_hit_p==1 ~ 1,ple_hit_y==1 ~ 1,
+          ple_lockdown_p==1 ~ 1,ple_lockdown_y==1 ~ 1,
+          ple_shot_p==0 ~ 0,ple_shot_y==0 ~ 0,
+          ple_hit_p==0 ~ 0,ple_hit_y==0 ~ 0,
+          ple_lockdown_p==0 ~ 0,ple_lockdown_y==0 ~ 0,
+          is.na(ple_shot_p) ~ NA,is.na(ple_shot_y) ~ NA,
+          is.na(ple_hit_p) ~ NA,is.na(ple_hit_y) ~ NA,
+          is.na(ple_lockdown_p) ~ NA,is.na(ple_lockdown_y) ~ NA
         )) %>%
-          mutate(parent_relationship_base_p = case_when(
-          ple_argue_p==1 & ple_argue_past_yr_p==0 ~ 1,
-          ple_argue_p==0 ~ 0,
-          is.na(ple_argue_p) ~ NA
+          mutate(parent_relationship = case_when(
+          ple_argue_p==1 ~ 1,ple_argue_y==1 ~ 1,
+          ple_argue_p==0 ~ 0,ple_argue_y==0 ~ 0,
+          is.na(ple_argue_p) ~ NA,is.na(ple_argue_y) ~ NA
         ))
 
-test2 <- data_base_raw %>% 
+### calculate baseline life event columns
+data_yr1 <- data_yr1_raw %>%
+          mutate(sep_divorce_base = case_when(
+          # at yr 1 parent says event occurred ever but not past yr (so baseline)
+          ple_separ_p==1 & ple_separ_past_yr_p==0 ~ 1,
+          # at yr 1 youth says event occurred ever but not past yr (so baseline)
+          ple_separ_y==1 & ple_separ_past_yr_y==0 ~ 1,
+          # at yr 1 parent says never happened
+          ple_separ_p==0 ~ 0,
+          # at yr 1 youth says never happened
+          ple_separ_y==0 ~ 0,
+          # at yr 1 question not asked to parent
+          is.na(ple_separ_p) ~ NA,
+          # at yr 1 question not asked to youth
+          is.na(ple_separ_p) ~ NA
+        )) %>%
+          mutate(family_jail_base = case_when(
+          ple_jail_p==1 & ple_jail_past_yr_p==0 ~ 1,
+          ple_jail_y==1 & ple_jail_past_yr_y==0 ~ 1,
+          ple_jail_p==0 ~ 0,
+          ple_jail_y==0 ~ 0,
+          is.na(ple_jail_p) ~ NA,
+          is.na(ple_jail_y) ~ NA
+        )) %>%
+          mutate(family_mental_ill_base = case_when(
+          ple_mh_p==1 & ple_mh_past_yr_p==0 ~ 1,
+          ple_mh_y==1 & ple_mh_past_yr_y==0 ~ 1,
+          # youth said family member died by suicide but not in the last year
+          ple_suicide_y==1 & ple_who_y___1==1 & ple_argue_past_yr_y==0 ~ 1,
+          ple_mh_p==0 ~ 0,
+          ple_mh_y==0 ~ 0,
+          ple_suicide_y==0 ~ 0,
+          is.na(ple_mh_p) ~ NA,
+          is.na(ple_mh_y) ~ NA,
+          is.na(ple_suicide_y) ~ NA
+        )) %>%
+          mutate(basic_needs_base = case_when(
+          ple_homeless_p==1 & ple_homeless_past_yr_p==0 ~ 1,
+          ple_homeless_y==1 & ple_homeless_past_yr_y==0 ~ 1,
+          ple_homeless_p==0 ~ 0,
+          ple_homeless_y==0 ~ 0,
+          is.na(ple_homeless_p) ~ NA,
+          is.na(ple_homeless_y) ~ NA
+        )) %>%
+          mutate(physical_harm_base = case_when(
+          ple_victim_p==1 & ple_victim_past_yr_p==0 ~ 1,
+          ple_victim_y==1 & ple_victim_past_yr_y==0 ~ 1,
+          ple_victim_p==0 ~ 0,
+          ple_victim_y==0 ~ 0,
+          is.na(ple_victim_p) ~ NA,
+          is.na(ple_victim_y) ~ NA
+        )) %>%
+          mutate(family_sud_base = case_when(
+          ple_sud_p==1 & ple_sud_past_yr_p==0 ~ 1,
+          ple_sud_y==1 & ple_sud_past_yr_y==0 ~ 1,
+          ple_sud_p==0 ~ 0,
+          ple_sud_y==0 ~ 0,
+          is.na(ple_sud_p) ~ NA,
+          is.na(ple_sud_y) ~ NA
+        )) %>%
+          mutate(foster_base = case_when(
+          ple_foster_care_p==1 & ple_foster_care_past_yr_p==0 ~ 1,
+          ple_foster_care_y==1 & ple_foster_care_past_yr_y==0 ~ 1,
+          ple_foster_care_p==0 ~ 0,
+          ple_foster_care_y==0 ~ 0,
+          is.na(ple_foster_care_p) ~ NA,
+          is.na(ple_foster_care_y) ~ NA
+        )) %>%
+          mutate(family_died_base = case_when(
+          ple_died_p==1 & ple_died_past_yr_p==0 ~ 1,
+          ple_died_y==1 & ple_died_past_yr_y==0 ~ 1,
+          ple_died_p==0 ~ 0,
+          ple_died_y==0 ~ 0,
+          is.na(ple_died_p) ~ NA,
+          is.na(ple_died_y) ~ NA
+        )) %>%
+          mutate(deportation_base = case_when(
+          ple_deported_p==1 & ple_deported_past_yr_p==0 ~ 1,
+          ple_deported_y==1 & ple_deported_past_yr_y==0 ~ 1,
+          ple_deported_p==0 ~ 0,
+          ple_deported_y==0 ~ 0,
+          is.na(ple_deported_p) ~ NA,
+          is.na(ple_deported_y) ~ NA
+        )) %>%
+          mutate(sick_base = case_when(
+          ple_ill_p==1 & ple_ill_past_yr_p==0 ~ 1,
+          ple_ill_y==1 & ple_ill_past_yr_y==0 ~ 1,
+          ple_ill_p==0 ~ 0,
+          ple_ill_y==0 ~ 0,
+          is.na(ple_ill_p) ~ NA,
+          is.na(ple_ill_y) ~ NA
+        )) %>%
+          mutate(neighborhood_violence_base = case_when(
+          ple_shot_p==1 & ple_shot_past_yr_p==0 ~ 1,
+          ple_shot_y==1 & ple_shot_past_yr_y==0 ~ 1,
+          ple_hit_p==1 & ple_hit_past_yr_p==0 ~ 1,
+          ple_hit_y==1 & ple_hit_past_yr_y==0 ~ 1,
+          ple_lockdown_p==1 & ple_lockdown_past_yr_p==0 ~ 1,
+          ple_lockdown_y==1 & ple_lockdown_past_yr_y==0 ~ 1,
+          ple_shot_p==0 ~ 0,
+          ple_shot_y==0 ~ 0,
+          ple_hit_p==0 ~ 0,
+          ple_hit_y==0 ~ 0,
+          ple_lockdown_p==0 ~ 0,
+          ple_lockdown_y==0 ~ 0,
+          is.na(ple_shot_p) ~ NA,
+          is.na(ple_shot_y) ~ NA,
+          is.na(ple_hit_p) ~ NA,
+          is.na(ple_hit_y) ~ NA,
+          is.na(ple_lockdown_p) ~ NA,
+          is.na(ple_lockdown_y) ~ NA
+        )) %>%
+          mutate(parent_relationship_base = case_when(
+          ple_argue_p==1 & ple_argue_past_yr_p==0 ~ 1,
+          ple_argue_y==1 & ple_argue_past_yr_y==0 ~ 1,
+          ple_argue_p==0 ~ 0,
+          ple_argue_y==0 ~ 0,
+          is.na(ple_argue_p) ~ NA,
+          is.na(ple_argue_y) ~ NA
+        ))
+
+# add baseline line event columns to baseline data frame
+data_base_with_le <- data_base_raw %>% 
           left_join(select(data_yr1,c("src_subject_id",
-                                      "sep_divorce_base_p",
-                                      "family_jail_base_p",
-                                      "family_mental_ill_base_p",
-                                      "basic_needs_base_p",
-                                      "physical_harm_base_p",
-                                      "family_sud_base_p","foster_base_p",
-                                      "family_died_base_p","deportation_base_p",
-                                      "sick_base_p",
-                                      "neighborhood_violence_base_p",
-                                      "parent_relationship_base_p")
+                                      "sep_divorce_base",
+                                      "family_jail_base",
+                                      "family_mental_ill_base",
+                                      "basic_needs_base",
+                                      "physical_harm_base",
+                                      "family_sud_base","foster_base",
+                                      "family_died_base","deportation_base",
+                                      "sick_base",
+                                      "neighborhood_violence_base",
+                                      "parent_relationship_base")
                             ),
-                    by=c("src_subject_id"))
+                    by=c("src_subject_id")) %>%
+          rename(sep_divorce = sep_divorce_base,
+                 family_jail = family_jail_base,
+                 family_mental_ill = family_mental_ill_base,
+                 basic_needs = basic_needs_base,
+                 physical_harm = physical_harm_base,
+                 family_sud = family_sud_base,
+                 foster = foster_base,
+                 family_died = family_died_base,
+                 deportation = deportation_base,
+                 sick = sick_base,
+                 neighborhood_violence = neighborhood_violence_base,
+                 parent_relationship = parent_relationship_base
+                 )
+
+### keep data only from subjects who are not in year 4 data
+yr4_ids <- data_yr4_raw %>% select(src_subject_id) 
+baseline_ids_all <- data_base_raw %>% select(src_subject_id) 
+baseline_ids_keep <- anti_join(baseline_ids_all,yr4_ids,by="src_subject_id")
+data_base <- baseline_ids_keep %>% left_join(data_base_with_le,by=c("src_subject_id"))
+
+### recombine baseline and year 4 data
+data_combined <- bind_rows(data_base,data_yr4)
+
+### select only relevant columns from combined data, rename so more understandable
 
 
-sep_divorce <- ple_separ_y
-family_jail <- ple_jail_y
-family_mental_ill <- ple_mh_y
-family_mental_ill <- ple_suicide_y && ple_who_y___1
-basic_needs <- ple_homeless_y
-physical_harm <- ple_victim_y
-family_sud <- ple_sud_y
-foster <- ple_foster_care_y
-family_died <- ple_died_y
-deportation <- ple_deported_y
-sick <- ple_ill_y
-neighborhood_violence <- ple_shot_y
-neighborhood_violence <- ple_hit_y
-neighborhood_violence <- ple_lockdown_y
-parent_relationship <- ple_argue_y
+NEED TO MAKE THE IFELSE BELOW CASE_WHEN SO CAN ADD OPTIONS FOR 1, 0, AND NA
 
 
-
-
-  
-
-
-test <- data_raw %>%
-          # keep only data from baseline and year 4
-          filter(eventname == c("baseline_year_1_arm_1",
-                                "4_year_follow_up_y_arm_1")) %>%
+data_all <- data_combined %>%
           # note: there is no data from kids 144+ months (12+ yrs) at baseline
           # make new column for younger vs older group
-          mutate(age_group = case_when(src_subject_id %in% 
-                                         yr4_ids$src_subject_id ~ "older",
-                                       src_subject_id %in% 
-                                         baseline_ids_keep$src_subject_id ~ "younger"
+          mutate(age_group = case_when(eventname=="baseline_year_1_arm_1" ~ "younger",
+                                       eventname=="4_year_follow_up_y_arm_1" ~ "older"
           )) %>%
           mutate(car_accident = if_else(ksads_ptsd_raw_754_p==1,1,0)) %>%
           mutate(other_accident = if_else(ksads_ptsd_raw_755_p==1,1,0)) %>%
@@ -240,8 +363,8 @@ test <- data_raw %>%
           mutate(family_hurt = case_when(fes_youth_q6==1 ~ 1,
                                          fam_enviro6_p==1 ~ 1,
                                          TRUE ~ 0)) %>%
-          mutate(parent_anger = case_when(fes_youth_q4==1 ~ 1,
-                                         fam_enviro4r_p==1 ~ 1,
+          mutate(parent_anger = case_when(fes_youth_q4==0 ~ 1, #reverse scored
+                                         fam_enviro4r_p==0 ~ 1, #reverse scored
                                          TRUE ~ 0)) %>%
           mutate(discrimination = case_when(dim_matrix_q1==4 ~ 1,
                                             dim_matrix_q1==5 ~ 1,
@@ -249,24 +372,24 @@ test <- data_raw %>%
                                             dim_matrix_q2==5 ~ 1,
                                             dim_matrix_q3==4 ~ 1,
                                             dim_matrix_q3==5 ~ 1,
-                                            TRUE ~ 0))
-# %>%
-  
-
-
-  
-  
-
-
-  
-  
-  
-  
-  
-
-
-
-
+                                            TRUE ~ 0)) %>%
+          select(c("src_subject_id","eventname","age_group",
+                   # paisa ksads-comp analogues
+                   "car_accident","other_accident","fire",
+                   "natural_disaster","terrorism","war",
+                   "witness_harm","non_family_harm","family_harm",
+                   "beaten","non_family_threatened","family_threatened",
+                   "adult_violence","family_sexual","adult_sexual",
+                   "peer_sexual","learn_death",
+                   # paisa ace-q analogues
+                   "sep_divorce","family_jail","family_mental_ill",
+                   "family_hurt","basic_needs","physical_harm",
+                   "family_sud","foster","bullying",
+                   "family_died","deportation","sick",
+                   "neighborhood_violence","discrimination",
+                   # paisa quic analogues
+                   "parent_anger","parent_relationship","find_things"
+                   ))
 
 ```
 
