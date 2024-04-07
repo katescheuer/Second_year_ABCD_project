@@ -80,6 +80,8 @@ data_raw <- meta %>%
                       by=c("src_subject_id","eventname")) %>%
             left_join(select(discrimination_youth,
                              c("src_subject_id","eventname",
+                               "dim_yesno_q1","dim_yesno_q2",
+                               "dim_yesno_q3","dim_yesno_q4",
                                "dim_matrix_q1","dim_matrix_q2","dim_matrix_q3")),
                       by=c("src_subject_id","eventname"))
 
@@ -118,7 +120,7 @@ data_yr4 <- data_yr4_raw %>%
           is.na(ple_mh_p) ~ NA,is.na(ple_mh_y) ~ NA,
           is.na(ple_suicide_y) ~ NA
         )) %>%
-          mutate(basic_needs = case_when(
+          mutate(homeless = case_when(
           ple_homeless_p==1 ~ 1,ple_homeless_y==1 ~ 1,
           ple_homeless_p==0 ~ 0,ple_homeless_y==0 ~ 0,
           is.na(ple_homeless_p) ~ NA,is.na(ple_homeless_y) ~ NA
@@ -206,7 +208,7 @@ data_yr1 <- data_yr1_raw %>%
           is.na(ple_mh_y) ~ NA,
           is.na(ple_suicide_y) ~ NA
         )) %>%
-          mutate(basic_needs_base = case_when(
+          mutate(homeless_base = case_when(
           ple_homeless_p==1 & ple_homeless_past_yr_p==0 ~ 1,
           ple_homeless_y==1 & ple_homeless_past_yr_y==0 ~ 1,
           ple_homeless_p==0 ~ 0,
@@ -297,7 +299,7 @@ data_base_with_le <- data_base_raw %>%
                                       "sep_divorce_base",
                                       "family_jail_base",
                                       "family_mental_ill_base",
-                                      "basic_needs_base",
+                                      "homeless_base",
                                       "physical_harm_base",
                                       "family_sud_base","foster_base",
                                       "family_died_base","deportation_base",
@@ -309,7 +311,7 @@ data_base_with_le <- data_base_raw %>%
           rename(sep_divorce = sep_divorce_base,
                  family_jail = family_jail_base,
                  family_mental_ill = family_mental_ill_base,
-                 basic_needs = basic_needs_base,
+                 homeless = homeless_base,
                  physical_harm = physical_harm_base,
                  family_sud = family_sud_base,
                  foster = foster_base,
@@ -330,227 +332,203 @@ data_base <- baseline_ids_keep %>% left_join(data_base_with_le,by=c("src_subject
 data_combined <- bind_rows(data_base,data_yr4)
 
 ### select only relevant columns from combined data, rename so more understandable
-
-
-NEED TO MAKE THE IFELSE BELOW CASE_WHEN SO CAN ADD OPTIONS FOR 1, 0, AND NA
-
-
 data_all <- data_combined %>%
           # note: there is no data from kids 144+ months (12+ yrs) at baseline
           # make new column for younger vs older group
           mutate(age_group = case_when(eventname=="baseline_year_1_arm_1" ~ "younger",
                                        eventname=="4_year_follow_up_y_arm_1" ~ "older"
           )) %>%
-          mutate(car_accident = if_else(ksads_ptsd_raw_754_p==1,1,0)) %>%
-          mutate(other_accident = if_else(ksads_ptsd_raw_755_p==1,1,0)) %>%
-          mutate(fire = if_else(ksads_ptsd_raw_756_p==1,1,0)) %>%
-          mutate(natural_disaster = if_else(ksads_ptsd_raw_757_p==1,1,0)) %>%
-          mutate(terrorism = if_else(ksads_ptsd_raw_758_p==1,1,0)) %>%
-          mutate(war = if_else(ksads_ptsd_raw_759_p==1,1,0)) %>%
-          mutate(witness_harm = if_else(ksads_ptsd_raw_760_p==1,1,0)) %>%
-          mutate(non_family_harm = if_else(ksads_ptsd_raw_761_p==1,1,0)) %>%
-          mutate(family_harm = if_else(ksads_ptsd_raw_762_p==1,1,0)) %>%
-          mutate(beaten = if_else(ksads_ptsd_raw_763_p==1,1,0)) %>%
-          mutate(non_family_threatened = if_else(ksads_ptsd_raw_764_p==1,1,0)) %>%
-          mutate(family_threatened = if_else(ksads_ptsd_raw_765_p==1,1,0)) %>%
-          mutate(adult_violence = if_else(ksads_ptsd_raw_766_p==1,1,0)) %>%
-          mutate(family_sexual = if_else(ksads_ptsd_raw_767_p==1,1,0)) %>%
-          mutate(adult_sexual = if_else(ksads_ptsd_raw_768_p==1,1,0)) %>%
-          mutate(peer_sexual = if_else(ksads_ptsd_raw_769_p==1,1,0)) %>%
-          mutate(learn_death = if_else(ksads_ptsd_raw_770_p==1,1,0)) %>%
-          mutate(bullying = if_else(kbi_p_c_bully==1,1,0)) %>%
-          mutate(find_things = if_else(fes_29r_p==1,1,0)) %>%
+          mutate(car_accident = case_when(ksads_ptsd_raw_754_p==1 ~ 1,
+                                          ksads_ptsd_raw_754_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_754_p==1) ~ NA)) %>%
+          mutate(other_accident = case_when(ksads_ptsd_raw_755_p==1 ~ 1,
+                                          ksads_ptsd_raw_755_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_755_p==1) ~ NA)) %>%
+          mutate(fire = case_when(ksads_ptsd_raw_756_p==1 ~ 1,
+                                          ksads_ptsd_raw_756_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_756_p==1) ~ NA)) %>%
+          mutate(natural_disaster = case_when(ksads_ptsd_raw_757_p==1 ~ 1,
+                                          ksads_ptsd_raw_757_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_757_p==1) ~ NA)) %>%
+          mutate(terrorism = case_when(ksads_ptsd_raw_758_p==1 ~ 1,
+                                          ksads_ptsd_raw_758_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_758_p==1) ~ NA)) %>%
+          mutate(war = case_when(ksads_ptsd_raw_759_p==1 ~ 1,
+                                          ksads_ptsd_raw_759_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_759_p==1) ~ NA)) %>%
+          mutate(witness_harm = case_when(ksads_ptsd_raw_760_p==1 ~ 1,
+                                          ksads_ptsd_raw_760_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_760_p==1) ~ NA)) %>%
+          mutate(non_family_harm = case_when(ksads_ptsd_raw_761_p==1 ~ 1,
+                                          ksads_ptsd_raw_761_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_761_p==1) ~ NA)) %>%
+          mutate(family_harm = case_when(ksads_ptsd_raw_762_p==1 ~ 1,
+                                          ksads_ptsd_raw_762_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_762_p==1) ~ NA)) %>%
+          mutate(beaten = case_when(ksads_ptsd_raw_763_p==1 ~ 1,
+                                          ksads_ptsd_raw_763_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_763_p==1) ~ NA)) %>%
+          mutate(non_family_threatened = case_when(ksads_ptsd_raw_764_p==1 ~ 1,
+                                          ksads_ptsd_raw_764_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_764_p==1) ~ NA)) %>%
+          mutate(family_threatened = case_when(ksads_ptsd_raw_765_p==1 ~ 1,
+                                          ksads_ptsd_raw_765_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_765_p==1) ~ NA)) %>%
+          mutate(adult_violence = case_when(ksads_ptsd_raw_766_p==1 ~ 1,
+                                          ksads_ptsd_raw_766_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_766_p==1) ~ NA)) %>%
+          mutate(family_sexual = case_when(ksads_ptsd_raw_767_p==1 ~ 1,
+                                          ksads_ptsd_raw_767_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_767_p==1) ~ NA)) %>%
+          mutate(adult_sexual = case_when(ksads_ptsd_raw_768_p==1 ~ 1,
+                                          ksads_ptsd_raw_768_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_768_p==1) ~ NA)) %>%
+          mutate(peer_sexual = case_when(ksads_ptsd_raw_769_p==1 ~ 1,
+                                          ksads_ptsd_raw_769_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_769_p==1) ~ NA)) %>%
+          mutate(all_sexual = case_when(ksads_ptsd_raw_767_p==1 ~ 1,
+                                        ksads_ptsd_raw_768_p==1 ~ 1,
+                                        ksads_ptsd_raw_769_p==1 ~ 1,
+                                        ksads_ptsd_raw_767_p==0 ~ 0,
+                                        ksads_ptsd_raw_768_p==0 ~ 0,
+                                        ksads_ptsd_raw_769_p==0 ~ 0,
+                                        is.na(ksads_ptsd_raw_767_p==1) ~ NA,
+                                        is.na(ksads_ptsd_raw_768_p==1) ~ NA,
+                                        is.na(ksads_ptsd_raw_769_p==1) ~ NA)) %>%
+          mutate(learn_death = case_when(ksads_ptsd_raw_770_p==1 ~ 1,
+                                          ksads_ptsd_raw_770_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_770_p==1) ~ NA)) %>%
+          mutate(bullying = case_when(kbi_p_c_bully==1 ~ 1, #yes
+                                      kbi_p_c_bully==2 ~ 0, #no
+                                      is.na(kbi_p_c_bully) ~ NA)) %>%
+          mutate(find_things = case_when(fes_29r_p==1 ~ 0, #originally 1 = false, not hard to find
+                                         fes_29r_p==0 ~ 1, #originally 0 = true, hard to find
+                                         is.na(fes_29r_p) ~ NA)) %>%
           mutate(family_hurt = case_when(fes_youth_q6==1 ~ 1,
                                          fam_enviro6_p==1 ~ 1,
-                                         TRUE ~ 0)) %>%
-          mutate(parent_anger = case_when(fes_youth_q4==0 ~ 1, #reverse scored
-                                         fam_enviro4r_p==0 ~ 1, #reverse scored
-                                         TRUE ~ 0)) %>%
-          mutate(discrimination = case_when(dim_matrix_q1==4 ~ 1,
-                                            dim_matrix_q1==5 ~ 1,
-                                            dim_matrix_q2==4 ~ 1,
-                                            dim_matrix_q2==5 ~ 1,
-                                            dim_matrix_q3==4 ~ 1,
-                                            dim_matrix_q3==5 ~ 1,
-                                            TRUE ~ 0)) %>%
+                                         fes_youth_q6==0 ~ 0,
+                                         fam_enviro6_p==0 ~ 0,
+                                         is.na(fes_youth_q6) ~ NA,
+                                         is.na(fam_enviro6_p) ~ NA)) %>%
+          mutate(parent_anger = case_when(fes_youth_q4==1 ~ 1, #1 = false, do not hardly lose temper
+                                          fam_enviro4r_p==1 ~ 1, #1 = false, do not hardly lose temper
+                                          fes_youth_q4==0 ~ 0, #0 = true, hardly lose temper
+                                          fam_enviro4r_p==0 ~ 0, #0 = true, hardly lose temper
+                                          is.na(fes_youth_q4) ~ NA,
+                                          is.na(fam_enviro4r_p) ~ NA)) %>%
+          mutate(discrimination_last_year = case_when(dim_yesno_q1==1 ~ 1,
+                                                      dim_yesno_q1==2 ~ 1,
+                                                      dim_yesno_q1==3 ~ 1,
+                                                      dim_yesno_q1==4 ~ 1,
+                                                      dim_yesno_q1==0 ~ 0,
+                                                      dim_yesno_q2==0 ~ 0,
+                                                      dim_yesno_q3==0 ~ 0,
+                                                      dim_yesno_q4==0 ~ 0,
+                                                      is.na(dim_yesno_q1) ~ NA,
+                                                      is.na(dim_yesno_q2) ~ NA,
+                                                      is.na(dim_yesno_q3) ~ NA,
+                                                      is.na(dim_yesno_q4) ~ NA
+                                                      )) %>%
+          mutate(discrimination_often = case_when(dim_matrix_q1==4 ~ 1, #often
+                                            dim_matrix_q1==5 ~ 1, #very often
+                                            dim_matrix_q2==4 ~ 1, #often
+                                            dim_matrix_q2==5 ~ 1, #very often
+                                            dim_matrix_q3==4 ~ 1, #often
+                                            dim_matrix_q3==5 ~ 1, #very often
+                                            dim_matrix_q1==1 ~ 0, #almost never
+                                            dim_matrix_q1==2 ~ 0, #rarely
+                                            dim_matrix_q1==3 ~ 0, #sometimes
+                                            dim_matrix_q2==1 ~ 0, #almost never
+                                            dim_matrix_q2==2 ~ 0, #rarely
+                                            dim_matrix_q2==3 ~ 0, #sometimes
+                                            dim_matrix_q3==1 ~ 0, #almost never
+                                            dim_matrix_q3==2 ~ 0, #rarely
+                                            dim_matrix_q3==3 ~ 0, #sometimes
+                                            dim_matrix_q1==777 ~ NA, #don't know
+                                            dim_matrix_q1==777 ~ NA, #don't know
+                                            dim_matrix_q2==777 ~ NA, #don't know
+                                            dim_matrix_q2==777 ~ NA, #don't know
+                                            dim_matrix_q3==777 ~ NA, #don't know
+                                            dim_matrix_q3==777 ~ NA, #refuse to answer
+                                            dim_matrix_q1==999 ~ NA, #refuse to answer
+                                            dim_matrix_q1==999 ~ NA, #refuse to answer
+                                            dim_matrix_q2==999 ~ NA, #refuse to answer
+                                            dim_matrix_q2==999 ~ NA, #refuse to answer
+                                            dim_matrix_q3==999 ~ NA, #refuse to answer
+                                            dim_matrix_q3==999 ~ NA, #refuse to answer
+                                            is.na(dim_matrix_q1) ~ NA,
+                                            is.na(dim_matrix_q2) ~ NA,
+                                            is.na(dim_matrix_q3) ~ NA,
+                                            )) %>%
+          mutate(any_ksads_comp_q = case_when(car_accident==1 ~ 1,
+                                              other_accident==1 ~ 1,
+                                              fire==1 ~ 1,
+                                              natural_disaster==1 ~ 1,
+                                              terrorism==1 ~ 1,
+                                              war==1 ~ 1,
+                                              witness_harm==1 ~ 1,
+                                              non_family_harm==1 ~ 1,
+                                              beaten==1 ~ 1,
+                                              adult_violence==1 ~ 1,
+                                              peer_sexual==1 ~ 1,
+                                              learn_death==1 ~ 1,
+                                              physical_harm==1 ~ 1,
+                                              adult_sexual==1 ~ 1,
+                                              discrimination_last_year==1 ~ 1,
+                                              all_sexual==1 ~ 1,
+                                              TRUE ~ 0
+                                              )) %>%
+          mutate(any_aces_q = case_when(sep_divorce==1 ~ 1,
+                                              family_jail==1 ~ 1,
+                                              family_mental_ill==1 ~ 1,
+                                              family_hurt==1 ~ 1,
+                                              homeless==1 ~ 1,
+                                              physical_harm==1 ~ 1,
+                                              family_sud==1 ~ 1,
+                                              foster==1 ~ 1,
+                                              bullying==1 ~ 1,
+                                              family_died==1 ~ 1,
+                                              deportation==1 ~ 1,
+                                              sick==1 ~ 1,
+                                              neighborhood_violence==1 ~ 1,
+                                              discrimination_often==1 ~ 1,                              
+                                              TRUE ~ 0
+                                              )) %>%
           select(c("src_subject_id","eventname","age_group",
-                   # paisa ksads-comp analogues
+                   ### paisa ksads-comp analogues
                    "car_accident","other_accident","fire",
                    "natural_disaster","terrorism","war",
-                   "witness_harm","non_family_harm","family_harm",
-                   "beaten","non_family_threatened","family_threatened",
-                   "adult_violence","family_sexual","adult_sexual",
-                   "peer_sexual","learn_death",
-                   # paisa ace-q analogues
+                   "witness_harm","non_family_harm",
+                   "beaten","adult_violence","peer_sexual",
+                   "learn_death","physical_harm","adult_sexual",
+                   "discrimination_last_year","all_sexual",
+                   "any_ksads_comp_q",
+                   ### paisa ace-q analogues
                    "sep_divorce","family_jail","family_mental_ill",
-                   "family_hurt","basic_needs","physical_harm",
+                   "family_hurt","homeless","physical_harm",
                    "family_sud","foster","bullying",
                    "family_died","deportation","sick",
-                   "neighborhood_violence","discrimination",
-                   # paisa quic analogues
+                   "neighborhood_violence","discrimination_often",
+                   "any_aces_q",
+                   ### paisa quic analogues
                    "parent_anger","parent_relationship","find_things"
                    ))
 
 ```
 
-```{combine ace measures from abcd}
-
-# paisa, abcd (caregiver only) - ksads-ptsd: A car accident in which your child or another person in the car was hurt bad enough to require medical attention
-car_accident <- ksads_ptsd_raw_754_p
-# paisa, abcd (caregiver only) - ksads-ptsd: Another significant accident for which your child needed specialized and intensive medical treatment
-other_accident <- ksads_ptsd_raw_755_p
-# paisa, abcd (caregiver only) - ksads-ptsd: Witnessed or caught in a fire that caused significant property damage or personal injury
-fire <- ksads_ptsd_raw_756_p
-# paisa, abcd (caregiver only) - ksads-ptsd: Witnessed or caught in a natural disaster that caused significant property damage or personal injury
-natural_disaster <- ksads_ptsd_raw_757_p
-# paisa, abcd (caregiver only) - ksads-ptsd: Witnessed or present during an act of terrorism (e.g., Boston marathon bombing)
-terrorism <- ksads_ptsd_raw_758_p
-# paisa, abcd (caregiver only) - ksads-ptsd: Witnessed death or mass destruction in a war zone
-war <- ksads_ptsd_raw_759_p
-# paisa, abcd (caregiver only) - ksads-ptsd: Witnessed someone shot or stabbed in the community
-witness_harm <- ksads_ptsd_raw_760_p
-# paisa, abcd (caregiver only) - ksads-ptsd: Shot, stabbed, or beaten brutally by a non-family member
-non_family_harm <- ksads_ptsd_raw_761_p
-# paisa, abcd (caregiver only) - ksads-ptsd: Shot, stabbed, or beaten brutally by a grown up in the home
-family_harm <- ksads_ptsd_raw_762_p
-# paisa, abcd (caregiver only) - ksads-ptsd: Beaten to the point of having bruises by a grown up in the home
-beaten <- ksads_ptsd_raw_763_p
-# paisa, abcd (caregiver only) - ksads-ptsd: A non-family member threatened to kill your child
-non_family_threatened <- ksads_ptsd_raw_764_p
-# paisa, abcd (caregiver only) - ksads-ptsd: A family member threatened to kill your child
-family_threatened <- ksads_ptsd_raw_765_p
-# paisa, abcd (caregiver only) - ksads-ptsd: Witness the grownups in the home push, shove or hit one another
-adult_violence <- ksads_ptsd_raw_766_p
-# paisa, abcd (caregiver only) - ksads-ptsd: A grown up in the home touched your child in their privates, had your child touch their privates, or did other sexual things to your child
-family_sexual <- ksads_ptsd_raw_767_p
-# paisa, abcd (caregiver only) - ksads-ptsd: An adult outside your family touched your child in their privates, had your child touch their privates or did other sexual things to your child
-adult_sexual <- ksads_ptsd_raw_768_p
-# paisa, abcd (caregiver only) - ksads-ptsd: A peer forced your child to do something sexually
-peer_sexual <- ksads_ptsd_raw_769_p
-# paisa, abcd (caregiver only) - ksads-ptsd: Learned about the sudden unexpected death of a loved one
-learn_death <- ksads_ptsd_raw_770_p
-
-
-# paisa - ace-q: Your child’s parents or guardians were separated or divorced
-# abcd - life events (caregiver): Parents separated or divorced?
-sep_divorce <- ple_separ_p
-# abcd - life events (youth): Parents separated or divorced?
-sep_divorce <- ple_separ_y
-
-# paisa - ace-q: Your child lived with a household member who served time in jail or prison
-# abcd - life events (caregiver): One of the parents/caregivers went to jail?
-family_jail <- ple_jail_p
-# abcd - life events (youth): One of the parents/caregivers went to jail?
-family_jail <- ple_jail_y
-
-# paisa - ace-q: Your child lived with a household member who was depressed,  mentally ill or attempted suicide 
-# abcd - life events (caregiver): Family member had mental/emotional problem?
-family_mental_ill <- ple_mh_p
-# abcd - life events (youth): Family member had mental/emotional problem?
-family_mental_ill <- ple_mh_y
-# abcd - life events (youth): Do you know someone who has attempted suicide? Was this person: A family member
-family_mental_ill <- ple_suicide_y && ple_who_y___1
-
-# paisa - ace-q: Your child saw or heard household members hurt or threaten to hurt each other 
-# abcd - family environment scale (youth): Family members sometimes hit each other.
-family_hurt <- fes_youth_q6
-# abcd - family environment scale (caregiver): Family members sometimes hit each other.
-family_hurt <- fam_enviro6_p
-
-# paisa - ace-q: A household member swore at, insulted, humiliated, or put down your child in a way that scared your child OR a household member acted in a way that made your child afraid that s/he might be physically hurt
-
-# paisa - ace-q: More than once, your child went without food, clothing, a place to live, or had no one to protect her/him 
-# abcd - life events (caregiver): Your family was homeless?
-basic_needs <- ple_homeless_p
-# abcd - life events (youth): Your family was homeless?
-basic_needs <- ple_homeless_y
-
-# paisa - ace-q: Someone pushed, grabbed, slapped or threw something at your child OR your child was hit so hard that your child was injured or had marks 
-# abcd - life events (caregiver): Was a victim of crime/violence/assault?
-physical_harm <- ple_victim_p
-# abcd - life events (youth): Was a victim of crime/violence/assault?
-physical_harm <- ple_victim_y
-
-# paisa - ace-q: Your child lived with someone who had a problem with drinking or using drugs
-# abcd - life events (caregiver): Family member had drug and/or alcohol problem?
-family_sud <- ple_sud_p
-# abcd - life events (youth): Family member had drug and/or alcohol problem?
-family_sud <- ple_sud_y
-
-# paisa - ace-q: Your child often felt unsupported, unloved and/or unprotected
-
-# paisa - ace-q: Your child was in foster care 
-# abcd - life events (caregiver): Child placed in foster care?
-foster <- ple_foster_care_p
-# abcd - life events (youth): Child placed in foster care?
-foster <- ple_foster_care_y
-
-# paisa - ace-q: Your child experienced harassment or bullying at school 
-# abcd - ksads background (parent): Does your child have any problems with bullying at school or in your neighborhood?
-bullying <- kbi_p_c_bully
-
-# paisa - ace-q: Your child lived with a parent or guardian who died
-# abcd - life events (caregiver): Someone in the family died?
-family_died <- ple_died_p
-# abcd - life events (youth): Someone in the family died?
-family_died <- ple_died_y
-
-# paisa - ace-q: Your child was separated from her/his primary caregiver through deportation or immigration 
-# abcd - life events (caregiver): One of the parents/caregivers was deported?
-deportation <- ple_deported_p
-# abcd - life events (youth): One of the parents/caregivers was deported?
-deportation <- ple_deported_y
-
-# paisa - ace-q: Your child had a serious medical procedure or life threatening illness 
-# abcd - life events (caregiver): Child was seriously sick?
-sick <- ple_ill_p
-# abcd - life events (youth): Child was seriously sick?
-sick <- ple_ill_y
-
-# paisa - ace-q: Your child often saw or heard violence in the neighborhood or in her/his school neighborhood 
-# abcd - life events (caregiver): Saw or heard someone being shot at (but not actually wounded) in their school or in their neighborhood?
-neighborhood_violence <- ple_shot_p
-# abcd - life events (youth): Saw or heard someone being shot at (but not actually wounded) in their school or in their neighborhood?
-neighborhood_violence <- ple_shot_y
-# abcd - life events (caregiver): Saw or heard someone getting hit, slapped, punched, or beaten up in their school or neighborhood?
-neighborhood_violence <- ple_hit_p
-# abcd - life events (youth): Saw or heard someone getting hit, slapped, punched, or beaten up in their school or neighborhood?
-neighborhood_violence <- ple_hit_y
-# abcd - life events (caregiver): Had a lockdown at your school due to concerns about a school shooting or violence?
-neighborhood_violence <- ple_lockdown_p
-# abcd - life events (youth): Had a lockdown at your school due to concerns about a school shooting or violence?
-neighborhood_violence <- ple_lockdown_y
-
-
-# paisa - ace-q: Your child was often treated badly because of race, sexual orientation, place of birth, disability or religion
-# abcd - discrimination measure (youth): How often do the following people treat you unfairly or negatively because of your ethnic background? Teachers (4 = often, 5 = very often)
-discrimination <- dim_matrix_q1 == 4 or 5
-# abcd - discrimination measure (youth): How often do the following people treat you unfairly or negatively because of your ethnic background? Adults outside school (4 = often, 5 = very often)
-discrimination <- dim_matrix_q2 == 4 or 5
-# abcd - discrimination measure (youth): How often do the following people treat you unfairly or negatively because of your ethnic background? Students (4 = often, 5 = very often)
-discrimination <- dim_matrix_q3 == 4 or 5
-
-
-# paisa - quic: Before age 11, my child has/had a bedtime routine (e.g., was tucked in, parents read him/her a book, took a bath). - R  
-
-# paisa - quic: At least one of my child’s parents is unpredictable
-
-# paisa - quic: At least one of my child’s parents can go from calm to furious in an instant. 
-# abcd - family environment scale (youth): Family members hardly ever lose their tempers.
-parent_anger <- fes_youth_q4
-# abcd - family environment scale (caregiver): Family members hardly ever lose their tempers.
-parent_anger <- fam_enviro4r_p
-
-# paisa - quic: My child’s parents have a stable relationship with each other.  - R
-# abcd - life events (caregiver): Parents argued more than previously?
-parent_relationship <- ple_argue_p
-# abcd - life events (youth): Parents argued more than previously?
-parent_relationship <- ple_argue_y
-
-# paisa - quic: In my child’s house, things he/she needs are often misplaced so that he/she cannot find them. 
-# abcd - family environment scale (caregiver): It's often hard to find things when we need them in our household.
-find_things <- fes_29r_p
-
+```{determine prevalence of each ace, include=FALSE}
+data_all$age_group <- as.factor(data_all$age_group)
+nrow(data_all) #11868 subjects total
+data_all %>% 
+  select(-c(src_subject_id)) %>%
+  map(table)
+data_all %>% 
+  select(-c(src_subject_id)) %>%
+  filter(eventname=="baseline_year_1_arm_1") %>%
+  map(table)
+data_all %>% 
+  select(-c(src_subject_id)) %>%
+  filter(eventname=="4_year_follow_up_y_arm_1") %>%
+  map(table)
 
 ```
-
