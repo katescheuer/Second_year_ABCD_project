@@ -308,6 +308,7 @@ data_base_with_le <- data_base_raw %>%
                                       "parent_relationship_base")
                             ),
                     by=c("src_subject_id")) %>%
+                    # by=c("src_subject_id","eventname")) %>%
           rename(sep_divorce = sep_divorce_base,
                  family_jail = family_jail_base,
                  family_mental_ill = family_mental_ill_base,
@@ -331,8 +332,10 @@ data_base <- baseline_ids_keep %>% left_join(data_base_with_le,by=c("src_subject
 ### recombine baseline and year 4 data
 data_combined <- bind_rows(data_base,data_yr4)
 
-### select only relevant columns from combined data, rename so more understandable
-data_all <- data_combined %>%
+### for "cross-sectional data" ie split into subjects in yr 4 and subjects in
+### baseline (but not year 4)
+# select only relevant columns from combined data, rename so more understandable
+data_all_cross <- data_combined %>%
           # note: there is no data from kids 144+ months (12+ yrs) at baseline
           # make new column for younger vs older group
           mutate(age_group = case_when(eventname=="baseline_year_1_arm_1" ~ "younger",
@@ -514,21 +517,205 @@ data_all <- data_combined %>%
                    "parent_anger","parent_relationship","find_things"
                    ))
 
+
+### for all subjects, at baseline timepoint only
+# select only relevant columns from combined data, rename so more understandable
+data_all_base <- data_base_with_le %>% 
+          filter(eventname=="baseline_year_1_arm_1") %>%
+          mutate(car_accident = case_when(ksads_ptsd_raw_754_p==1 ~ 1,
+                                          ksads_ptsd_raw_754_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_754_p==1) ~ NA)) %>%
+          mutate(other_accident = case_when(ksads_ptsd_raw_755_p==1 ~ 1,
+                                          ksads_ptsd_raw_755_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_755_p==1) ~ NA)) %>%
+          mutate(fire = case_when(ksads_ptsd_raw_756_p==1 ~ 1,
+                                          ksads_ptsd_raw_756_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_756_p==1) ~ NA)) %>%
+          mutate(natural_disaster = case_when(ksads_ptsd_raw_757_p==1 ~ 1,
+                                          ksads_ptsd_raw_757_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_757_p==1) ~ NA)) %>%
+          mutate(terrorism = case_when(ksads_ptsd_raw_758_p==1 ~ 1,
+                                          ksads_ptsd_raw_758_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_758_p==1) ~ NA)) %>%
+          mutate(war = case_when(ksads_ptsd_raw_759_p==1 ~ 1,
+                                          ksads_ptsd_raw_759_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_759_p==1) ~ NA)) %>%
+          mutate(witness_harm = case_when(ksads_ptsd_raw_760_p==1 ~ 1,
+                                          ksads_ptsd_raw_760_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_760_p==1) ~ NA)) %>%
+          mutate(non_family_harm = case_when(ksads_ptsd_raw_761_p==1 ~ 1,
+                                          ksads_ptsd_raw_761_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_761_p==1) ~ NA)) %>%
+          mutate(family_harm = case_when(ksads_ptsd_raw_762_p==1 ~ 1,
+                                          ksads_ptsd_raw_762_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_762_p==1) ~ NA)) %>%
+          mutate(beaten = case_when(ksads_ptsd_raw_763_p==1 ~ 1,
+                                          ksads_ptsd_raw_763_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_763_p==1) ~ NA)) %>%
+          mutate(non_family_threatened = case_when(ksads_ptsd_raw_764_p==1 ~ 1,
+                                          ksads_ptsd_raw_764_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_764_p==1) ~ NA)) %>%
+          mutate(family_threatened = case_when(ksads_ptsd_raw_765_p==1 ~ 1,
+                                          ksads_ptsd_raw_765_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_765_p==1) ~ NA)) %>%
+          mutate(adult_violence = case_when(ksads_ptsd_raw_766_p==1 ~ 1,
+                                          ksads_ptsd_raw_766_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_766_p==1) ~ NA)) %>%
+          mutate(family_sexual = case_when(ksads_ptsd_raw_767_p==1 ~ 1,
+                                          ksads_ptsd_raw_767_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_767_p==1) ~ NA)) %>%
+          mutate(adult_sexual = case_when(ksads_ptsd_raw_768_p==1 ~ 1,
+                                          ksads_ptsd_raw_768_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_768_p==1) ~ NA)) %>%
+          mutate(peer_sexual = case_when(ksads_ptsd_raw_769_p==1 ~ 1,
+                                          ksads_ptsd_raw_769_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_769_p==1) ~ NA)) %>%
+          mutate(all_sexual = case_when(ksads_ptsd_raw_767_p==1 ~ 1,
+                                        ksads_ptsd_raw_768_p==1 ~ 1,
+                                        ksads_ptsd_raw_769_p==1 ~ 1,
+                                        ksads_ptsd_raw_767_p==0 ~ 0,
+                                        ksads_ptsd_raw_768_p==0 ~ 0,
+                                        ksads_ptsd_raw_769_p==0 ~ 0,
+                                        is.na(ksads_ptsd_raw_767_p==1) ~ NA,
+                                        is.na(ksads_ptsd_raw_768_p==1) ~ NA,
+                                        is.na(ksads_ptsd_raw_769_p==1) ~ NA)) %>%
+          mutate(learn_death = case_when(ksads_ptsd_raw_770_p==1 ~ 1,
+                                          ksads_ptsd_raw_770_p==0 ~ 0,
+                                          is.na(ksads_ptsd_raw_770_p==1) ~ NA)) %>%
+          mutate(bullying = case_when(kbi_p_c_bully==1 ~ 1, #yes
+                                      kbi_p_c_bully==2 ~ 0, #no
+                                      is.na(kbi_p_c_bully) ~ NA)) %>%
+          mutate(find_things = case_when(fes_29r_p==1 ~ 0, #originally 1 = false, not hard to find
+                                         fes_29r_p==0 ~ 1, #originally 0 = true, hard to find
+                                         is.na(fes_29r_p) ~ NA)) %>%
+          mutate(family_hurt = case_when(fes_youth_q6==1 ~ 1,
+                                         fam_enviro6_p==1 ~ 1,
+                                         fes_youth_q6==0 ~ 0,
+                                         fam_enviro6_p==0 ~ 0,
+                                         is.na(fes_youth_q6) ~ NA,
+                                         is.na(fam_enviro6_p) ~ NA)) %>%
+          mutate(parent_anger = case_when(fes_youth_q4==1 ~ 1, #1 = false, do not hardly lose temper
+                                          fam_enviro4r_p==1 ~ 1, #1 = false, do not hardly lose temper
+                                          fes_youth_q4==0 ~ 0, #0 = true, hardly lose temper
+                                          fam_enviro4r_p==0 ~ 0, #0 = true, hardly lose temper
+                                          is.na(fes_youth_q4) ~ NA,
+                                          is.na(fam_enviro4r_p) ~ NA)) %>%
+          mutate(discrimination_last_year = case_when(dim_yesno_q1==1 ~ 1,
+                                                      dim_yesno_q1==2 ~ 1,
+                                                      dim_yesno_q1==3 ~ 1,
+                                                      dim_yesno_q1==4 ~ 1,
+                                                      dim_yesno_q1==0 ~ 0,
+                                                      dim_yesno_q2==0 ~ 0,
+                                                      dim_yesno_q3==0 ~ 0,
+                                                      dim_yesno_q4==0 ~ 0,
+                                                      is.na(dim_yesno_q1) ~ NA,
+                                                      is.na(dim_yesno_q2) ~ NA,
+                                                      is.na(dim_yesno_q3) ~ NA,
+                                                      is.na(dim_yesno_q4) ~ NA
+                                                      )) %>%
+          mutate(discrimination_often = case_when(dim_matrix_q1==4 ~ 1, #often
+                                            dim_matrix_q1==5 ~ 1, #very often
+                                            dim_matrix_q2==4 ~ 1, #often
+                                            dim_matrix_q2==5 ~ 1, #very often
+                                            dim_matrix_q3==4 ~ 1, #often
+                                            dim_matrix_q3==5 ~ 1, #very often
+                                            dim_matrix_q1==1 ~ 0, #almost never
+                                            dim_matrix_q1==2 ~ 0, #rarely
+                                            dim_matrix_q1==3 ~ 0, #sometimes
+                                            dim_matrix_q2==1 ~ 0, #almost never
+                                            dim_matrix_q2==2 ~ 0, #rarely
+                                            dim_matrix_q2==3 ~ 0, #sometimes
+                                            dim_matrix_q3==1 ~ 0, #almost never
+                                            dim_matrix_q3==2 ~ 0, #rarely
+                                            dim_matrix_q3==3 ~ 0, #sometimes
+                                            dim_matrix_q1==777 ~ NA, #don't know
+                                            dim_matrix_q1==777 ~ NA, #don't know
+                                            dim_matrix_q2==777 ~ NA, #don't know
+                                            dim_matrix_q2==777 ~ NA, #don't know
+                                            dim_matrix_q3==777 ~ NA, #don't know
+                                            dim_matrix_q3==777 ~ NA, #refuse to answer
+                                            dim_matrix_q1==999 ~ NA, #refuse to answer
+                                            dim_matrix_q1==999 ~ NA, #refuse to answer
+                                            dim_matrix_q2==999 ~ NA, #refuse to answer
+                                            dim_matrix_q2==999 ~ NA, #refuse to answer
+                                            dim_matrix_q3==999 ~ NA, #refuse to answer
+                                            dim_matrix_q3==999 ~ NA, #refuse to answer
+                                            is.na(dim_matrix_q1) ~ NA,
+                                            is.na(dim_matrix_q2) ~ NA,
+                                            is.na(dim_matrix_q3) ~ NA,
+                                            )) %>%
+          mutate(any_ksads_comp_q = case_when(car_accident==1 ~ 1,
+                                              other_accident==1 ~ 1,
+                                              fire==1 ~ 1,
+                                              natural_disaster==1 ~ 1,
+                                              terrorism==1 ~ 1,
+                                              war==1 ~ 1,
+                                              witness_harm==1 ~ 1,
+                                              non_family_harm==1 ~ 1,
+                                              beaten==1 ~ 1,
+                                              adult_violence==1 ~ 1,
+                                              peer_sexual==1 ~ 1,
+                                              learn_death==1 ~ 1,
+                                              physical_harm==1 ~ 1,
+                                              adult_sexual==1 ~ 1,
+                                              discrimination_last_year==1 ~ 1,
+                                              all_sexual==1 ~ 1,
+                                              TRUE ~ 0
+                                              )) %>%
+          mutate(any_aces_q = case_when(sep_divorce==1 ~ 1,
+                                              family_jail==1 ~ 1,
+                                              family_mental_ill==1 ~ 1,
+                                              family_hurt==1 ~ 1,
+                                              homeless==1 ~ 1,
+                                              physical_harm==1 ~ 1,
+                                              family_sud==1 ~ 1,
+                                              foster==1 ~ 1,
+                                              bullying==1 ~ 1,
+                                              family_died==1 ~ 1,
+                                              deportation==1 ~ 1,
+                                              sick==1 ~ 1,
+                                              neighborhood_violence==1 ~ 1,
+                                              discrimination_often==1 ~ 1,                              
+                                              TRUE ~ 0
+                                              )) %>%
+          select(c("src_subject_id","eventname",
+                   ### paisa ksads-comp analogues
+                   "car_accident","other_accident","fire",
+                   "natural_disaster","terrorism","war",
+                   "witness_harm","non_family_harm",
+                   "beaten","adult_violence","peer_sexual",
+                   "learn_death","physical_harm",
+                   "adult_sexual",
+                   "all_sexual",
+                   "any_ksads_comp_q",
+                   ### paisa ace-q analogues
+                   "bullying",
+                   "any_aces_q"
+                   ))
 ```
 
 ```{determine prevalence of each ace, include=FALSE}
-data_all$age_group <- as.factor(data_all$age_group)
-nrow(data_all) #11868 subjects total
-data_all %>% 
+
+### "cross-sectional" - for measures administered at both baseline and yr 4
+data_all_cross$age_group <- as.factor(data_all_cross$age_group)
+nrow(data_all_cross) #11868 subjects total
+## data_all_cross is split into younger and older
+data_all_cross %>% 
   select(-c(src_subject_id)) %>%
   map(table)
-data_all %>% 
+data_all_cross %>% 
   select(-c(src_subject_id)) %>%
   filter(eventname=="baseline_year_1_arm_1") %>%
   map(table)
-data_all %>% 
+data_all_cross %>% 
   select(-c(src_subject_id)) %>%
   filter(eventname=="4_year_follow_up_y_arm_1") %>%
+  map(table)
+
+## baseline data for all subjects
+nrow(data_all_base)
+data_all_base %>% 
+  select(-c(src_subject_id)) %>%
   map(table)
 
 ```
