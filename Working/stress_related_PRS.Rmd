@@ -1137,7 +1137,7 @@ summary(cbcl_total_M1b)
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_total_M1a,cbcl_total_M1b,test="Chisq")  #1a is better
-# all w sex instead of gender, no site: no ixn is better
+
 
 ### Sig Results ----
 ## All: 
@@ -1153,6 +1153,9 @@ anova(cbcl_total_M1a,cbcl_total_M1b,test="Chisq")  #1a is better
 ##      M1a: no sig (gnc: p = 0.0829)
 ##      M1b: gnc (p = 0.0238)
 ## All w sex instead of gender:
+##      M1a: income, cisf (p=0.033)
+##      M1b: income, cisf (p=0.036)
+## All w sex instead of gender and no site:
 ##      M1a: income, cisf (p=0.033)
 ##      M1b: income, cisf (p=0.036)
 
@@ -1175,73 +1178,18 @@ anova(cbcl_total_M1a,cbcl_total_M1b,test="Chisq")  #1a is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_ext_M1a <- lm(res_c_ext ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_ext_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 cbcl_ext_M1b <- lm(res_c_ext ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_ext_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-cbcl_ext_M2a <- lm(res_c_ext ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_ext_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-cbcl_ext_M2b <- lm(res_c_ext ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_ext_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# all, eur, afr: failed to converge with either optimizer
-cbcl_ext_M2c <- lm(res_c_ext ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(cbcl_ext_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, afr: failed to converge with either optimizer
-cbcl_ext_M2d <- lm(res_c_ext ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(cbcl_ext_M2d)
-
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_ext_M1a,cbcl_ext_M1b,test="Chisq")  #1a is better
-anova(cbcl_ext_M1a,cbcl_ext_M2a,test="Chisq") #1a is better
-anova(cbcl_ext_M1a,cbcl_ext_M2b,test="Chisq") #1a is better
-anova(cbcl_ext_M1a,cbcl_ext_M2c,test="Chisq") #1a is better
-anova(cbcl_ext_M1a,cbcl_ext_M2d,test="Chisq") #1a is better
-anova(cbcl_ext_M1b,cbcl_ext_M2b,test="Chisq") #1b is better
-anova(cbcl_ext_M1b,cbcl_ext_M2d,test="Chisq") #1b is better
-# all, eur, afr, amadmix, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, eur, afr, amadmix, all w sex instead of gender: if want to include interactions, use fixed slope
 
 
 ### Sig Results ----
@@ -1280,73 +1228,19 @@ anova(cbcl_ext_M1b,cbcl_ext_M2d,test="Chisq") #1b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_int_M1a <- lm(res_c_int ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_int_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 cbcl_int_M1b <- lm(res_c_int ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_int_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-cbcl_int_M2a <- lm(res_c_int ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_int_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-cbcl_int_M2b <- lm(res_c_int ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_int_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# amadmix: failed to converge with either optimizer
-cbcl_int_M2c <- lm(res_c_int ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(cbcl_int_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, amadmix, all w sex instead of gender: failed to converge with either optimizer
-# cbcl_int_M2d <- lm(res_c_int ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-#                         zcmc_prs*sex_cmc_cisf +
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(cbcl_int_M2d)
 
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_int_M1a,cbcl_int_M1b,test="Chisq")  #1a is better
-anova(cbcl_int_M1a,cbcl_int_M2a,test="Chisq") #1a is better
-anova(cbcl_int_M1a,cbcl_int_M2b,test="Chisq") #1a is better
-anova(cbcl_int_M1a,cbcl_int_M2c,test="Chisq") #1a is better
-anova(cbcl_int_M1a,cbcl_int_M2d,test="Chisq") #1a is better
-anova(cbcl_int_M1b,cbcl_int_M2b,test="Chisq") #1b is better
-anova(cbcl_int_M1b,cbcl_int_M2d,test="Chisq") #1b is better
-# all, eur, afr, amadmix, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, eur, afr, amadmix, all w sex instead of gender: if want to include interactions, use fixed slope
 
 
 ### Sig Results ----
@@ -1386,74 +1280,18 @@ anova(cbcl_int_M1b,cbcl_int_M2d,test="Chisq") #1b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_aggress_M1a <- lm(res_c_aggress ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_aggress_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 cbcl_aggress_M1b <- lm(res_c_aggress ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_aggress_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-cbcl_aggress_M2a <- lm(res_c_aggress ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_aggress_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-cbcl_aggress_M2b <- lm(res_c_aggress ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_aggress_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# afr, amadmix: failed to converge with either optimizer
-cbcl_aggress_M2c <- lm(res_c_aggress ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(cbcl_aggress_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, eur, afr: failed to converge with either optimizer
-cbcl_aggress_M2d <- lm(res_c_aggress ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(cbcl_aggress_M2d)
-
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_aggress_M1a,cbcl_aggress_M1b,test="Chisq")  #1a is better
-anova(cbcl_aggress_M1a,cbcl_aggress_M2a,test="Chisq") #1a is better
-anova(cbcl_aggress_M1a,cbcl_aggress_M2b,test="Chisq") #1a is better
-anova(cbcl_aggress_M1a,cbcl_aggress_M2c,test="Chisq") #1a is better
-anova(cbcl_aggress_M1a,cbcl_aggress_M2d,test="Chisq") #1a is better
-anova(cbcl_aggress_M1b,cbcl_aggress_M2b,test="Chisq") #1b is better
-anova(cbcl_aggress_M1b,cbcl_aggress_M2d,test="Chisq") #1b is better
-# all, eur, afr, amadmix, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, eur, afr, amadmix, all w sex instead of gender: if want to include interactions, use fixed slope
-
 
 ### Sig Results ----
 ## All: 
@@ -1491,71 +1329,18 @@ anova(cbcl_aggress_M1b,cbcl_aggress_M2d,test="Chisq") #1b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_attn_M1a <- lm(res_c_attn ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_attn_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 cbcl_attn_M1b <- lm(res_c_attn ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_attn_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-cbcl_attn_M2a <- lm(res_c_attn ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_attn_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-cbcl_attn_M2b <- lm(res_c_attn ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_attn_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# all, eur, afr, amadmix, all w sex instead of gender: failed to converge with either optimizer
-# cbcl_attn_M2c <- lm(res_c_attn ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(cbcl_attn_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, eur, afr, amadmix, all w sex instead of gender: failed to converge with either optimizer
-# cbcl_attn_M2d <- lm(res_c_attn ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-#                         zcmc_prs*sex_cmc_cisf +
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(cbcl_attn_M2d)
-
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_attn_M1a,cbcl_attn_M1b,test="Chisq")  #1a is better
-anova(cbcl_attn_M1a,cbcl_attn_M2a,test="Chisq") #1a is better
-anova(cbcl_attn_M1a,cbcl_attn_M2b,test="Chisq") #1a is better
-anova(cbcl_attn_M1b,cbcl_attn_M2b,test="Chisq") #1b is better
-# all, eur, afr, amadmix, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, eur, afr, amadmix, all w sex instead of gender: if want to include interactions, use fixed slope
-
 
 ### Sig Results ----
 ## All: 
@@ -1593,74 +1378,18 @@ anova(cbcl_attn_M1b,cbcl_attn_M2b,test="Chisq") #1b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_anxdep_M1a <- lm(res_c_anxdep ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_anxdep_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 cbcl_anxdep_M1b <- lm(res_c_anxdep ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_anxdep_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-cbcl_anxdep_M2a <- lm(res_c_anxdep ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_anxdep_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-cbcl_anxdep_M2b <- lm(res_c_anxdep ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_anxdep_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# all, afr, amadmix, all w sex instead of gender: failed to converge with either optimizer
-# cbcl_anxdep_M2c <- lm(res_c_anxdep ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(cbcl_anxdep_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, afr, all w sex instead of gender: failed to converge with either optimizer
-# cbcl_anxdep_M2d <- lm(res_c_anxdep ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-#                         zcmc_prs*sex_cmc_cisf + 
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(cbcl_anxdep_M2d)
-
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_anxdep_M1a,cbcl_anxdep_M1b,test="Chisq")  #1a is better
-anova(cbcl_anxdep_M1a,cbcl_anxdep_M2a,test="Chisq") #1a is better
-anova(cbcl_anxdep_M1a,cbcl_anxdep_M2b,test="Chisq") #1a is better
-anova(cbcl_anxdep_M1a,cbcl_anxdep_M2c,test="Chisq") #1a is better
-anova(cbcl_anxdep_M1a,cbcl_anxdep_M2d,test="Chisq") #1a is better
-anova(cbcl_anxdep_M1b,cbcl_anxdep_M2b,test="Chisq") #1b is better
-anova(cbcl_anxdep_M1b,cbcl_anxdep_M2d,test="Chisq") #1b is better
-# all, eur, afr, amadmix, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, eur, afr, amadmix, all w sex instead of gender: if want to include interactions, use fixed slope
-
 
 
 ### Sig Results ----
@@ -1702,73 +1431,19 @@ anova(cbcl_anxdep_M1b,cbcl_anxdep_M2d,test="Chisq") #1b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_withdep_M1a <- lm(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_withdep_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 cbcl_withdep_M1b <- lm(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_withdep_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-cbcl_withdep_M2a <- lm(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_withdep_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-cbcl_withdep_M2b <- lm(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_withdep_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# all, afr, amadmix: failed to converge with either optimizer
-cbcl_withdep_M2c <- lm(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(cbcl_withdep_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# eur, afr, amadmix: failed to converge with either optimizer
-cbcl_withdep_M2d <- lm(res_c_withdep ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(cbcl_withdep_M2d)
-
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_withdep_M1a,cbcl_withdep_M1b,test="Chisq")  #1a is better
-anova(cbcl_withdep_M1a,cbcl_withdep_M2a,test="Chisq") #1a is better
-anova(cbcl_withdep_M1a,cbcl_withdep_M2b,test="Chisq") #1a is better
-anova(cbcl_withdep_M1a,cbcl_withdep_M2c,test="Chisq") #1a is better
-anova(cbcl_withdep_M1a,cbcl_withdep_M2d,test="Chisq") #1a is better
-anova(cbcl_withdep_M1b,cbcl_withdep_M2b,test="Chisq") #1b is better
-anova(cbcl_withdep_M1b,cbcl_withdep_M2d,test="Chisq") #1b is better
-# all, eur, afr, amadmix, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, eur, afr, amadmix, all w sex instead of gender: if want to include interactions, use fixed slope
+
 
 ### Sig Results ----
 ## All: 
@@ -1807,71 +1482,18 @@ anova(cbcl_withdep_M1b,cbcl_withdep_M2d,test="Chisq") #1b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_rule_M1a <- lm(res_c_rule ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_rule_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 cbcl_rule_M1b <- lm(res_c_rule ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_rule_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-cbcl_rule_M2a <- lm(res_c_rule ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_rule_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-cbcl_rule_M2b <- lm(res_c_rule ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_rule_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# all, eur, afr, amadmix: failed to converge with either optimizer
-cbcl_rule_M2c <- lm(res_c_rule ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(cbcl_rule_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, eur, afr, amadmix, all w sex instead of gender: failed to converge with either optimizer
-# cbcl_rule_M2d <- lm(res_c_rule ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-#                         zcmc_prs*sex_cmc_cisf +
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(cbcl_rule_M2d)
-
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_rule_M1a,cbcl_rule_M1b,test="Chisq")  #1a is better
-anova(cbcl_rule_M1a,cbcl_rule_M2a,test="Chisq") #1a is better
-anova(cbcl_rule_M1a,cbcl_rule_M2b,test="Chisq") #1a is better
-anova(cbcl_rule_M1a,cbcl_rule_M2c,test="Chisq") #1a is better
-anova(cbcl_rule_M1b,cbcl_rule_M2b,test="Chisq") #1b is better
-# all, eur, afr, amadmix: best fitting model is fixed slope without interactions
-# all, eur, afr, amadmix: if want to include interactions, use fixed slope
 
 ### Sig Results ----
 ## All: 
@@ -1909,73 +1531,19 @@ anova(cbcl_rule_M1b,cbcl_rule_M2b,test="Chisq") #1b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_social_M1a <- lm(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_social_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 cbcl_social_M1b <- lm(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_social_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-cbcl_social_M2a <- lm(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_social_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-cbcl_social_M2b <- lm(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_social_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# all, eur, all w sex instead of gender: failed to converge with either optimizer
-# cbcl_social_M2c <- lm(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(cbcl_social_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, eur: failed to converge with either optimizer
-cbcl_social_M2d <- lm(res_c_social ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(cbcl_social_M2d)
 
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_social_M1a,cbcl_social_M1b,test="Chisq")  #1a is better
-anova(cbcl_social_M1a,cbcl_social_M2a,test="Chisq") #1a is better
-anova(cbcl_social_M1a,cbcl_social_M2b,test="Chisq") #1a is better
-anova(cbcl_social_M1a,cbcl_social_M2c,test="Chisq") #1a is better
-anova(cbcl_social_M1a,cbcl_social_M2d,test="Chisq") #1a is better
-anova(cbcl_social_M1b,cbcl_social_M2b,test="Chisq") #1b is better
-anova(cbcl_social_M1b,cbcl_social_M2d,test="Chisq") #1b is better
-# all, eur, afr, amadmix, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, eur, afr, amadmix, all w sex instead of gender: if want to include interactions, use fixed slope
 
 ### Sig Results ----
 ## All: 
@@ -2014,72 +1582,18 @@ anova(cbcl_social_M1b,cbcl_social_M2d,test="Chisq") #1b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_somatic_M1a <- lm(res_c_somatic ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_somatic_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 cbcl_somatic_M1b <- lm(res_c_somatic ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_somatic_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-cbcl_somatic_M2a <- lm(res_c_somatic ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_somatic_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-cbcl_somatic_M2b <- lm(res_c_somatic ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_somatic_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# all, eur, afr, amadmix, all w sex instead of gender: failed to converge with either optimizer
-# cbcl_somatic_M2c <- lm(res_c_somatic ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(cbcl_somatic_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, eur, afr, all w sex instead of gender: failed to converge with either optimizer
-# cbcl_somatic_M2d <- lm(res_c_somatic ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-#                         zcmc_prs*sex_cmc_cisf + 
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(cbcl_somatic_M2d)
-
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_somatic_M1a,cbcl_somatic_M1b,test="Chisq")  #1a is better
-anova(cbcl_somatic_M1a,cbcl_somatic_M2a,test="Chisq") #1a is better
-anova(cbcl_somatic_M1a,cbcl_somatic_M2b,test="Chisq") #1a is better
-anova(cbcl_somatic_M1a,cbcl_somatic_M2d,test="Chisq") #1a is better
-anova(cbcl_somatic_M1b,cbcl_somatic_M2b,test="Chisq") #1b is better
-anova(cbcl_somatic_M1b,cbcl_somatic_M2d,test="Chisq") #1b is better
-# all, eur, afr, amadmix, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, eur, afr, amadmix, all w sex instead of gender: if want to include interactions, use fixed slope
 
 ### Sig Results ----
 ## All: 
@@ -2117,78 +1631,19 @@ anova(cbcl_somatic_M1b,cbcl_somatic_M2d,test="Chisq") #1b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 cbcl_thought_M1a <- lm(res_c_thought ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_thought_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 cbcl_thought_M1b <- lm(res_c_thought ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(cbcl_thought_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-cbcl_thought_M2a <- lm(res_c_thought ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_thought_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-cbcl_thought_M2b <- lm(res_c_thought ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(cbcl_thought_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# all, eur, afr, amadmix, all w sex instead of gender: failed to converge with either optimizer
-# cbcl_thought_M2c <- lm(res_c_thought ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(cbcl_thought_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, eur, afr, amadmix: failed to converge with either optimizer
-cbcl_thought_M2d <- lm(res_c_thought ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(cbcl_thought_M2d)
 
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_thought_M1a,cbcl_thought_M1b,test="Chisq")  #all, eur, amadmix: 1b is better; afr: 1a is better
-anova(cbcl_thought_M1b,cbcl_thought_M2a,test="Chisq") #all, eur, amadmix: 1b is better; all w sex instead of gender: 2a is better
-anova(cbcl_thought_M1b,cbcl_thought_M2b,test="Chisq") #all, eur, amadmix: 1b is better
-anova(cbcl_thought_M1a,cbcl_thought_M2a,test="Chisq") #afr: 1a is better
-anova(cbcl_thought_M1a,cbcl_thought_M2b,test="Chisq") #afr: 1a is better
-anova(cbcl_thought_M2a,cbcl_thought_M2b,test="Chisq") #all w sex instead of gender: 2a is better
-anova(cbcl_thought_M2a,cbcl_thought_M2d,test="Chisq") #all w sex instead of gender: 2a is better
-anova(cbcl_thought_M1b,cbcl_thought_M2b,test="Chisq") #all w sex instead of gender: 1b is better
-anova(cbcl_thought_M1b,cbcl_thought_M2d,test="Chisq") #all w sex instead of gender: 1b is better
-# all, eur, amadmix: best fitting model is fixed slope with interactions
-# afr: best fitting model is fixed slope without interactions
-# afr: if want to include interactions, use fixed slope
-# all w sex instead of gender: best fitting model is random slope without interactions
-# all w sex instead of gender: if want to include interactions, use fixed slope
 
 
 ### Sig Results ----
@@ -2228,71 +1683,18 @@ anova(cbcl_thought_M1b,cbcl_thought_M2d,test="Chisq") #all w sex instead of gend
 
 ### Random Intercept, Fixed Slopes without interactions ----
 ksads_adhd_M1a <- lm(res_k_adhd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(ksads_adhd_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 ksads_adhd_M1b <- lm(res_k_adhd ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(ksads_adhd_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-ksads_adhd_M2a <- lm(res_k_adhd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(ksads_adhd_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-ksads_adhd_M2b <- lm(res_k_adhd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(ksads_adhd_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-ksads_adhd_M2c <- lm(res_k_adhd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(ksads_adhd_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-ksads_adhd_M2d <- lm(res_k_adhd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(ksads_adhd_M2d)
-
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(ksads_adhd_M1a,ksads_adhd_M1b,test="Chisq")  #1a  is better
-anova(ksads_adhd_M1a,ksads_adhd_M2a,test="Chisq") #1a is better
-anova(ksads_adhd_M1a,ksads_adhd_M2b,test="Chisq") #1a is better
-anova(ksads_adhd_M1a,ksads_adhd_M2c,test="Chisq") #1a is better
-anova(ksads_adhd_M1a,ksads_adhd_M2d,test="Chisq") #1a is better
-anova(ksads_adhd_M1b,ksads_adhd_M2b,test="Chisq") #1b is better
-anova(ksads_adhd_M1b,ksads_adhd_M2d,test="Chisq") #1b is better
-# all, eur, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, eur, all w sex instead of gender: if want to include interactions, use fixed slope
 
 ### Sig Results ----
 ## All: 
@@ -2325,73 +1727,19 @@ anova(ksads_adhd_M1b,ksads_adhd_M2d,test="Chisq") #1b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 ksads_gad_M1a <- lm(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(ksads_gad_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 ksads_gad_M1b <- lm(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(ksads_gad_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-ksads_gad_M2a <- lm(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(ksads_gad_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-ksads_gad_M2b <- lm(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(ksads_gad_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# all, eur, afr, amadmix: failed to converge with either optimizer
-ksads_gad_M2c <- lm(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(ksads_gad_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, eur: failed to converge with either optimizer
-ksads_gad_M2d <- lm(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(ksads_gad_M2d)
 
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(ksads_gad_M1a,ksads_gad_M1b,test="Chisq")  #1a  is better
-anova(ksads_gad_M1a,ksads_gad_M2a,test="Chisq") #1a is better
-anova(ksads_gad_M1a,ksads_gad_M2b,test="Chisq") #1a is better
-anova(ksads_gad_M1a,ksads_gad_M2c,test="Chisq") #1a is better
-anova(ksads_gad_M1a,ksads_gad_M2d,test="Chisq") #1a is better
-anova(ksads_gad_M1b,ksads_gad_M2b,test="Chisq") #1b is better
-anova(ksads_gad_M1b,ksads_gad_M2d,test="Chisq") #1b is better
-# all, eur, afr, amadmix, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, eur, afr, amadmix, all w sex instead of gender: if want to include interactions, use fixed slope
 
 
 ### Sig Results ----
@@ -2427,72 +1775,19 @@ anova(ksads_gad_M1b,ksads_gad_M2d,test="Chisq") #1b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 ksads_mdd_M1a <- lm(res_k_mdd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(ksads_mdd_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 ksads_mdd_M1b <- lm(res_k_mdd ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(ksads_mdd_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-ksads_mdd_M2a <- lm(res_k_mdd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(ksads_mdd_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-ksads_mdd_M2b <- lm(res_k_mdd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(ksads_mdd_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# all, eur, afr, all w sex instead of gender: failed to converge with either optimizer
-# ksads_mdd_M2c <- lm(res_k_mdd ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(ksads_mdd_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, eur, afr, all w sex instead of gender: failed to converge with either optimizer
-# ksads_mdd_M2d <- lm(res_k_mdd ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         sex_cmc_cisf  +
-#                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-#                         zcmc_prs*sex_cmc_cisf +
-#                       
-#                         ),
-#                     # data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-# summary(ksads_mdd_M2d)
 
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(ksads_mdd_M1a,ksads_mdd_M1b,test="Chisq")  #1a  is better
-anova(ksads_mdd_M1a,ksads_mdd_M2a,test="Chisq") #all, afr: 1a is better; eur: 2a is better
-anova(ksads_mdd_M1a,ksads_mdd_M2b,test="Chisq") #all: 1a is better
-anova(ksads_mdd_M1b,ksads_mdd_M2b,test="Chisq") #all, afr: 1b is better
-anova(ksads_mdd_M2a,ksads_mdd_M2b,test="Chisq") #eur: 2b is better
-# all, afr, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, afr, all w sex instead of gender: if want to include interactions, use fixed slope
-# eur: best fitting model is variable slope with interactions
 
 
 ### Sig Results ----
@@ -2528,78 +1823,18 @@ anova(ksads_mdd_M2a,ksads_mdd_M2b,test="Chisq") #eur: 2b is better
 
 ### Random Intercept, Fixed Slopes without interactions ----
 ksads_ptsd_M1a <- lm(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                    data=yr4_reg_data)
+                        sex_cmc_cisf,data=yr4_reg_data)
 summary(ksads_ptsd_M1a)
 
 ### Random Intercept, Fixed Slopes with interactions ----
 ksads_ptsd_M1b <- lm(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf  +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                    data=yr4_reg_data)
+                        zcmc_prs*sex_cmc_cisf,data=yr4_reg_data)
 summary(ksads_ptsd_M1b)
-
-### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-ksads_ptsd_M2a <- lm(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(ksads_ptsd_M2a)
-
-### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-ksads_ptsd_M2b <- lm(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf +  
-                      
-                      
-                      ,
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-summary(ksads_ptsd_M2b)
-
-### Random Intercept, random slopes, random effects free to correlate without interactions ----
-# all: failed to converge with either optimizer
-ksads_ptsd_M2c <- lm(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(ksads_ptsd_M2c)
-
-### Random Intercept, random slopes, random effects free to correlate with interactions ----
-# all, eur: failed to converge with either optimizer
-ksads_ptsd_M2d <- lm(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf  +
-                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs*sex_cmc_cisf + 
-                      
-                        ),
-                    data=yr4_reg_data,control=lmControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data,control=lmControl(optimizer="Nelder_Mead"))
-summary(ksads_ptsd_M2d)
-
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(ksads_ptsd_M1a,ksads_ptsd_M1b,test="Chisq")  #all, eur, all w sex instead of gender: 1a is better; afr: 1b is better
-anova(ksads_ptsd_M1a,ksads_ptsd_M2a,test="Chisq") #all, eur, all w sex instead of gender: 1a is better
-anova(ksads_ptsd_M1a,ksads_ptsd_M2b,test="Chisq") #all, eur, all w sex instead of gender: 1a is better
-anova(ksads_ptsd_M1a,ksads_ptsd_M2c,test="Chisq") #eur: 1a is better
-anova(ksads_ptsd_M1a,ksads_ptsd_M2d,test="Chisq") #all w sex instead of gender: 1a is better
-anova(ksads_ptsd_M1b,ksads_ptsd_M2a,test="Chisq") #afr: 1b is better
-anova(ksads_ptsd_M1b,ksads_ptsd_M2b,test="Chisq") #afr: 2b is better
-anova(ksads_ptsd_M2b,ksads_ptsd_M2c,test="Chisq") #afr: 2b is better
-anova(ksads_ptsd_M2b,ksads_ptsd_M2d,test="Chisq") #afr: 2b is better
-anova(ksads_ptsd_M1b,ksads_ptsd_M2b,test="Chisq") #all, eur, all w sex instead of gender: 1b is better
-anova(ksads_ptsd_M1b,ksads_ptsd_M2d,test="Chisq") #all w sex instead of gender: 1b is better
-# all, eur, all w sex instead of gender: best fitting model is fixed slope without interactions
-# all, eur, all w sex instead of gender: if want to include interactions, use fixed slope
-# afr: best fitting model is variable slope with interactions
 
 
 ### Sig Results ----
