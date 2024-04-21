@@ -533,6 +533,13 @@ income_df <- demo %>%
 abcd_all <- demo %>%
               select(c("src_subject_id","eventname","demo_sex_v2",
                        "demo_gender_id_v2","demo_gender_id_v2_l")) %>%
+              # to copy sex (asked only at baseline) to other years
+              group_by(src_subject_id) %>%
+              mutate(sex = first(demo_sex_v2)) %>%
+              ungroup() %>%
+              # only three subjects are intersex which is too small to analyze
+              # so set to NA
+              mutate(sex = if_else(sex==3,NA,sex)) %>%
               # combine items for gender from baseline to yr 2 and yr 3+
               mutate(gender_id = case_when(!is.na(demo_gender_id_v2) ~ demo_gender_id_v2,
                                         !is.na(demo_gender_id_v2_l) ~ demo_gender_id_v2_l
@@ -916,6 +923,7 @@ lm_resid_ksads <- lm_amadmix_cond_resid_ksads_long %>%
 yr4_reg_data <- yr4_data %>%
                 select(c("src_subject_id","prs_all_mhc_val",
                          "demo_gender_id_v2_l",
+                         "sex",
                          "income_to_needs","site","interview_age",
                          "ancestry",
                          "cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
@@ -980,6 +988,7 @@ yr4_reg_data <- yr4_data %>%
         
 ### dummy code, effect code, and cluster mean center categorical variables ####
 ## dummy
+# sex - male = 0, female = 1
 # gender - cismale: gen_dum_cisf = 0, gen_dum_gnc = 0
 # gender - cisfemale: gen_dum_cisf = 1, gen_dum_gnc = 0
 # gender - gnc/other: gen_dum_cisf = 0, gen_dum_gnc = 1
@@ -987,6 +996,7 @@ yr4_reg_data <- yr4_data %>%
 # ancestry - afr: anc_dum_afr = 1, anc_dum_eur = 0
 # ancestry - eur: anc_dum_afr = 0, anc_dum_eur = 1
 ## effect
+# sex - male = -1, female = 1
 # gender - cismale: gen_eff_cisf = -1, gen_eff_gnc = -1
 # gender - cisfemale: gen_eff_cisf = 1, gen_eff_gnc = 0
 # gender - gnc/other: gen_eff_cisf = 0, gen_eff_gnc = 1
@@ -995,6 +1005,8 @@ yr4_reg_data <- yr4_data %>%
 # ancestry - eur: anc_eff_afr = 0, anc_eff_eur = 1
 
                 # dummy coding
+                mutate(sex_dum_cisf = case_when(sex == 1 ~ 0,
+                                                sex == 2 ~ 1)) %>%
                 mutate(gen_dum_cisf = case_when(gender == "cism" ~ 0,
                                                 gender == "cisf" ~ 1,
                                                 gender == "gnc" ~ 0)) %>%
@@ -1008,6 +1020,8 @@ yr4_reg_data <- yr4_data %>%
                                                ancestry == "Afr" ~ 0,
                                                ancestry == "Eur" ~ 1)) %>%
                 # effect coding
+                mutate(sex_eff_cisf = case_when(sex == 1 ~ -1,
+                                                sex == 2 ~ 1)) %>%
                 mutate(gen_eff_cisf = case_when(gender == "cism" ~ -1,
                                                 gender == "cisf" ~ 1,
                                                 gender == "gnc" ~ 0)) %>%
@@ -1022,6 +1036,8 @@ yr4_reg_data <- yr4_data %>%
                                                ancestry == "Afr" ~ 0,
                                                ancestry == "Eur" ~ 1)) %>%
                 # cluster mean center categorical predictors
+                mutate(sex_cmc_cisf = as.numeric(center(sex_eff_cisf, 
+                                     type="CWC", cluster = site))) %>%
                 mutate(gen_cmc_cisf = as.numeric(center(gen_eff_cisf, 
                                      type="CWC", cluster = site))) %>%
                 mutate(gen_cmc_gnc = as.numeric(center(gen_eff_gnc, 
@@ -1049,6 +1065,7 @@ yr4_reg_data <- yr4_data %>%
                 #reorder columns so easier to work with
                 select(id,site,prs,age,income_to_needs,gender,ancestry,
                        zcmc_prs,zcmc_age,zcmc_income,
+                       sex_dum_cisf, sex_eff_cisf, sex_cmc_cisf,
                        gen_dum_cisf,gen_dum_gnc,
                        gen_eff_cisf,gen_eff_gnc,
                        gen_cmc_cisf,gen_cmc_gnc,
@@ -1068,8 +1085,6 @@ yr4_reg_data <- yr4_data %>%
                        )
 
 ```
-
-### Make plots for inputs and outputs
 
 ``` {makes plots for inputs and outputs}
 ggplot(aes(x=site,fill=gender),data=yr4_reg_data) +
@@ -1175,54 +1190,89 @@ ICC_Y2 <- cluster_var/(cluster_var + resid_var)
 ICC_Y2 # 0.3% (all) or 0.6% (eur) or 0% (afr, amadmix) of the variance in total problems is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
-cbcl_total_M1a <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
-                       gen_cmc_cisf + gen_cmc_gnc +
-                      (1|site),
-                    data=yr4_reg_data, REML=FALSE)
-summary(cbcl_total_M1a)
+cbcl_total_M1a_gender <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                              gen_cmc_cisf + gen_cmc_gnc +
+                          (1|site),
+                        data=yr4_reg_data, REML=FALSE)
+summary(cbcl_total_M1a_gender)
+cbcl_total_M1a_sex <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                            sex_cmc_cisf +
+                          (1|site),
+                        data=yr4_reg_data, REML=FALSE)
+summary(cbcl_total_M1a_sex)
 
 ### Random Intercept, Fixed Slopes with interactions ----
-cbcl_total_M1b <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+cbcl_total_M1b_gender <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
                         gen_cmc_cisf + gen_cmc_gnc +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
                       (1|site),
                     data=yr4_reg_data, REML=FALSE)
-summary(cbcl_total_M1b)
+summary(cbcl_total_M1b_gender)
+cbcl_total_M1b_sex <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        sex_cmc_cisf +
+                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+                        zcmc_prs*sex_cmc_cisf +
+                      (1|site),
+                    data=yr4_reg_data, REML=FALSE)
+summary(cbcl_total_M1b_sex)
 
 ### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-cbcl_total_M2a <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+cbcl_total_M2a_gender <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
                         gen_cmc_cisf + gen_cmc_gnc +
                       (1|site)+(0+zcmc_prs|site)+
                       (0+zcmc_income|site)+(0+zcmc_age|site)+
                       (0+gen_cmc_cisf|site)+(0+gen_cmc_gnc|site), #don't have enough to add more variables to random slope
                     data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-summary(cbcl_total_M2a)
+summary(cbcl_total_M2a_gender)
+cbcl_total_M2a_sex <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        sex_cmc_cisf + 
+                      (1|site)+(0+zcmc_prs|site)+
+                      (0+zcmc_income|site)+(0+zcmc_age|site)+
+                      (0+sex_cmc_cisf|site), 
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+summary(cbcl_total_M2a_sex)
 
 ### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-cbcl_total_M2b <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+cbcl_total_M2b_gender <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
                         gen_cmc_cisf + gen_cmc_gnc +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc + 
                       (1|site)+(0+zcmc_prs|site)+
                       (0+zcmc_income|site)+(0+zcmc_age|site)+
-                      (0+gen_cmc_cisf|site)+(0+gen_cmc_gnc|site), #don't have enough to add more variables to random slope
+                      (0+gen_cmc_cisf|site)+(0+gen_cmc_gnc|site),
                     data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-summary(cbcl_total_M2b)
+summary(cbcl_total_M2b_gender)
+cbcl_total_M2b_sex <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        sex_cmc_cisf +
+                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+                        zcmc_prs*sex_cmc_cisf + 
+                      (1|site)+(0+zcmc_prs|site)+
+                      (0+zcmc_income|site)+(0+zcmc_age|site)+
+                      (0+sex_cmc_cisf|site), 
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+summary(cbcl_total_M2b_sex)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
 # amadmix: failed to converge with either optimizer
-# cbcl_total_M2c <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
-#                         gen_cmc_cisf + gen_cmc_gnc +
-#                       (1+zcmc_prs+zcmc_income+zcmc_age+
-#                         gen_cmc_cisf + gen_cmc_gnc |site),
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-# summary(cbcl_total_M2c)
+cbcl_total_M2c_gender <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                      (1+zcmc_prs+zcmc_income+zcmc_age+
+                        gen_cmc_cisf + gen_cmc_gnc |site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+summary(cbcl_total_M2c_gender)
+cbcl_total_M2c_sex <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        sex_cmc_cisf +
+                      (1+zcmc_prs+zcmc_income+zcmc_age+
+                        sex_cmc_cisf|site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+summary(cbcl_total_M2c_sex)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
 # eur, afr: failed to converge with either optimizer
-cbcl_total_M2d <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+cbcl_total_M2d_gender <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
                         gen_cmc_cisf + gen_cmc_gnc +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
@@ -1230,16 +1280,35 @@ cbcl_total_M2d <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
                         gen_cmc_cisf + gen_cmc_gnc |site),
                     data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-# summary(cbcl_total_M2d)
+summary(cbcl_total_M2d_gender)
+cbcl_total_M2d_sex <- lmer(res_c_total ~ zcmc_prs + zcmc_age + zcmc_income +
+                        sex_cmc_cisf +
+                        zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
+                        zcmc_prs*sex_cmc_cisf +
+                      (1+zcmc_prs+zcmc_income+zcmc_age+
+                        sex_cmc_cisf|site),
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+summary(cbcl_total_M2d_sex)
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
-anova(cbcl_total_M1a,cbcl_total_M1b,test="Chisq")  #1a is better
-anova(cbcl_total_M1a,cbcl_total_M2a,test="Chisq") #1a is better
-anova(cbcl_total_M1a,cbcl_total_M2b,test="Chisq") #1a is better
-anova(cbcl_total_M1a,cbcl_total_M2c,test="Chisq") #1a is better
-anova(cbcl_total_M1a,cbcl_total_M2d,test="Chisq") #1a is better
-anova(cbcl_total_M1b,cbcl_total_M2b,test="Chisq") #1b is better than 2b
-anova(cbcl_total_M1b,cbcl_total_M2d,test="Chisq") #1b is better than 2b
+anova(cbcl_total_M1a_sex,cbcl_total_M1b_sex,test="Chisq")  #1a is better
+anova(cbcl_total_M1a_sex,cbcl_total_M2a_sex,test="Chisq") #1a is better
+anova(cbcl_total_M1a_sex,cbcl_total_M2b_sex,test="Chisq") #1a is better
+anova(cbcl_total_M1a_sex,cbcl_total_M2c_sex,test="Chisq") #1a is better
+anova(cbcl_total_M1a_sex,cbcl_total_M2d_sex,test="Chisq") #1a is better
+
+anova(cbcl_total_M1a_gender,cbcl_total_M1b_gender,test="Chisq")  #1a is better
+anova(cbcl_total_M1a_gender,cbcl_total_M2a_gender,test="Chisq") #1a is better
+anova(cbcl_total_M1a_gender,cbcl_total_M2b_gender,test="Chisq") #1a is better
+anova(cbcl_total_M1a_gender,cbcl_total_M2c_gender,test="Chisq") #1a is better
+anova(cbcl_total_M1a_gender,cbcl_total_M2d_gender,test="Chisq") #1a is better
+
+# 1a gender: aic = 14822.4, bic = 14870.9
+# 1a sex: aic = 14971.9, bic = 15014.4
+# all: choose model 1a gender
+
+
 # all, eur, afr, amadmix: best fitting model is fixed slope without interactions
 # all, eur, afr, amadmix: if want to include interactions, use fixed slope
 
