@@ -537,7 +537,7 @@ abcd_all <- demo %>%
               group_by(src_subject_id) %>%
               mutate(sex = first(demo_sex_v2)) %>%
               ungroup() %>%
-              # only three subjects are intersex which is too small to analyze
+              # only 12 subjects are intersex which is too small to analyze
               # so set to NA
               mutate(sex = if_else(sex==3,NA,sex)) %>%
               # combine items for gender from baseline to yr 2 and yr 3+
@@ -775,6 +775,10 @@ yr4_reg_data <- yr4_data %>%
                   raw_k_mdd = mdd,
                   raw_k_ptsd = ptsd
                 ) %>%
+
+                #remove subjects without sex info
+                filter(gender != is.na(sex)) %>%
+  
                 mutate(gender = case_when(gender == 1 ~ "cism",
                                           gender == 2 ~ "cisf",
                                           gender == 3 ~ "gnc", #trans m
@@ -783,8 +787,11 @@ yr4_reg_data <- yr4_data %>%
                                           gender == 6 ~ "gnc", #other
                                           gender == 777 ~ NA,
                                           gender == 999 ~ NA,
-        
                 )) %>%
+                                          
+                #remove subjects without gender info
+                filter(gender != is.na(gender)) %>%
+                      
                 left_join(lm_resid_cbcl,by="id") %>%
                 left_join(lm_resid_ksads,by="id") %>%
                 rename(
@@ -882,7 +889,7 @@ yr4_reg_data <- yr4_data %>%
                 filter(!is.na(res_k_ptsd)) %>%
 
                 #reorder columns so easier to work with
-                select(id,site,prs,age,income_to_needs,gender,ancestry,
+                select(id,site,prs,age,income_to_needs,gender,sex,ancestry,
                        zcmc_prs,zcmc_age,zcmc_income,
                        sex_dum_cisf, sex_eff_cisf, sex_cmc_cisf,
                        gen_dum_cisf,gen_dum_gnc,
@@ -959,7 +966,7 @@ ggplot(aes(y=raw_c_thought,x=gender),data=yr4_reg_data) +
   theme_classic() 
 # ggplot(aes(y=raw_k_adhd,x=gender),data=yr4_reg_data) +
 #   geom_boxplot() +
-#   theme_classic() 
+#   theme_classic()
 # ggplot(aes(y=raw_k_gad,x=gender),data=yr4_reg_data) +
 #   geom_boxplot() +
 #   theme_classic() 
@@ -1077,9 +1084,9 @@ anova(prs_M1a_sex,prs_M2a_sex,test="Chisq") #1a is better
 
 anova(prs_M1a_gender,prs_M2a_gender,test="Chisq") #1a is better
 
-# 1a gender: aic = 14562.8, bic = 14617.5
-# 1a sex: aic = 14655.3, bic = 14703.9
-# all: choose model 1a gender
+# 1a gender: aic = 14562.7, bic = 14617.3
+# 1a sex: aic = 14562.2, bic = 14610.7
+# all: choose model 1a sex
 
 ### Sig Results ----
 ## no sig results
@@ -1239,19 +1246,23 @@ anova(cbcl_total_M1a_gender,cbcl_total_M1b_gender,test="Chisq")  #1a is better
 anova(cbcl_total_M1a_gender,cbcl_total_M2a_gender,test="Chisq") #1a is better
 anova(cbcl_total_M1a_gender,cbcl_total_M2b_gender,test="Chisq") #1a is better
 
-# 1a gender: aic = 14825.1, bic = 14885.7
-# 1a sex: aic = 14974.9, bic = 15029.6
+# 1a gender: aic = 14824.9, bic = 14885.6
+# 1a sex: aic = 14865.1, bic = 14919.7
 # all: choose model 1a gender
 
 ### Sig Results ----
-## income: p = 0.0199, beta = -0.101132
-## cisf: p < 0.0001, beta = -0.600253 (compared to avg)
-## gnc: p < 0.0001, beta = 1.279493 (compared to avg)
+## income: p = 0.0187, beta = -0.102015
+## cisf: p < 0.0001, beta = -0.600201 (compared to avg)
+## gnc: p < 0.0001, beta = 1.279358 (compared to avg)
 
 
 ```
 
 ``` {cbcl~prs and covar regressions - externalizing,r}
+
+START HERE RE-RUNNING
+
+
 
 ## Externalizing problems score ----
 ### Intercept-Only Model Estimation (for Y) ----
