@@ -973,7 +973,7 @@ ggplot(aes(y=raw_c_thought,x=gender),data=yr4_reg_data) +
 
 ```
 
-``` {cbcl regressions, icc for x variables,r}
+``` {icc for x variables, r}
 
 ### Obtaining ICCs for L1 Predictors (Intercept-Only Model for X) ----
 income_to_needs_M0 <- lmer(income_to_needs ~ (1|site), data=yr4_reg_data, REML=FALSE)
@@ -999,6 +999,91 @@ cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_prs <- cluster_var/(cluster_var + resid_var)
 ICC_prs #1% of the variance in PRS is explained by site
+
+```
+
+``` {prs~ancestry and covar regressions, r}
+
+## PRS score ----
+### Intercept-Only Model Estimation (for Y) ----
+prs_M0 <- lmer(zcmc_prs ~ 1 + (1|site), data=yr4_reg_data, REML=FALSE)
+summary(prs_M0)
+
+### computing the ICC for Y using variance components ----
+variances = as.data.frame(VarCorr(prs_M0))
+cluster_var = variances[1,'vcov']
+resid_var = variances[2,'vcov']
+ICC_Y2 <- cluster_var/(cluster_var + resid_var)
+ICC_Y2 # <0.01% of the variance in total problems is explained by site
+
+### Random Intercept, Fixed Slopes without interactions ----
+prs_M1a_gender <- lmer(zcmc_prs ~ zcmc_age + zcmc_income +
+                              anc_cmc_afr + anc_cmc_eur +
+                              gen_cmc_cisf + gen_cmc_gnc +
+                          (1|site),
+                        data=yr4_reg_data, REML=FALSE)
+summary(prs_M1a_gender)
+prs_M1a_sex <- lmer(zcmc_prs ~ zcmc_age + zcmc_income +
+                              anc_cmc_afr + anc_cmc_eur +
+                            sex_cmc_cisf +
+                          (1|site),
+                        data=yr4_reg_data, REML=FALSE)
+summary(prs_M1a_sex)
+
+### Random Intercept, random slopes, random effects uncorrelated without interactions ----
+prs_M2a_gender <- lmer(zcmc_prs ~ zcmc_age + zcmc_income +
+                        anc_cmc_afr + anc_cmc_eur +
+                        gen_cmc_cisf + gen_cmc_gnc +
+                      (1|site)+
+                      (0+zcmc_income|site)+(0+zcmc_age|site)+
+                      (0+anc_cmc_afr|site)+(0+anc_cmc_eur|site)+
+                      (0+gen_cmc_cisf|site)+(0+gen_cmc_gnc|site), 
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+summary(prs_M2a_gender)
+prs_M2a_sex <- lmer(zcmc_prs ~ zcmc_age + zcmc_income +
+                        anc_cmc_afr + anc_cmc_eur +
+                        sex_cmc_cisf + 
+                      (1|site)+
+                      (0+zcmc_income|site)+(0+zcmc_age|site)+
+                      (0+anc_cmc_afr|site)+(0+anc_cmc_eur|site)+
+                      (0+sex_cmc_cisf|site), 
+                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+summary(prs_M2a_sex)
+
+### Random Intercept, random slopes, random effects free to correlate without interactions ----
+# gender failed to converge with either optimizer
+# prs_M2c_gender <- lmer(zcmc_prs ~ zcmc_age + zcmc_income +
+#                         anc_cmc_afr + anc_cmc_eur +
+#                         gen_cmc_cisf + gen_cmc_gnc +
+#                       (1+zcmc_income+zcmc_age+
+#                          anc_cmc_afr + anc_cmc_eur +
+#                         gen_cmc_cisf + gen_cmc_gnc |site),
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+# summary(prs_M2c_gender)
+# sex failed to converge with either optimizer
+# prs_M2c_sex <- lmer(zcmc_prs ~ zcmc_age + zcmc_income +
+#                         anc_cmc_afr + anc_cmc_eur +
+#                         sex_cmc_cisf +
+#                       (1+zcmc_income+zcmc_age+
+#                          anc_cmc_afr + anc_cmc_eur +
+#                         sex_cmc_cisf|site),
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+#                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+# summary(prs_M2c_sex)
+
+### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
+anova(prs_M1a_sex,prs_M2a_sex,test="Chisq") #1a is better
+
+anova(prs_M1a_gender,prs_M2a_gender,test="Chisq") #1a is better
+
+# 1a gender: aic = 14562.8, bic = 14617.5
+# 1a sex: aic = 14655.3, bic = 14703.9
+# all: choose model 1a gender
+
+### Sig Results ----
+## no sig results
+
 ```
 
 ``` {cbcl~prs and covar regressions - total problems,r}
