@@ -1260,10 +1260,6 @@ anova(cbcl_total_M1a_gender,cbcl_total_M2b_gender,test="Chisq") #1a is better
 
 ``` {cbcl~prs and covar regressions - externalizing,r}
 
-START HERE RE-RUNNING
-
-
-
 ## Externalizing problems score ----
 ### Intercept-Only Model Estimation (for Y) ----
 cbcl_ext_M0 <- lmer(res_c_ext ~ 1 + (1|site), data=yr4_reg_data, REML=FALSE)
@@ -1415,14 +1411,14 @@ anova(cbcl_ext_M1a_gender,cbcl_ext_M1b_gender,test="Chisq")  #1a is better
 anova(cbcl_ext_M1a_gender,cbcl_ext_M2a_gender,test="Chisq") #1a is better
 anova(cbcl_ext_M1a_gender,cbcl_ext_M2b_gender,test="Chisq") #1a is better
 
-# 1a gender: aic = 14479.8, bic = 14540.5
-# 1a sex: aic = 14611.6, bic = 14666.2
+# 1a gender: aic = 14479.6, bic = 14540.3
+# 1a sex: aic = 14498.3, bic = 14552.9
 # all: choose model 1a gender
 
 ### Sig Results ----
-## income: p = 0.0006, beta = -0.14077
-## cisf: p < 0.0001, beta = -0.49082 (compared to avg)
-## gnc: p < 0.0001, beta = 0.76764 (compared to avg)
+## income: p = 0.000577, beta = -0.141623
+## cisf: p < 0.0001, beta = -0.490761 (compared to avg)
+## gnc: p < 0.0001, beta = 0.767487 (compared to avg)
 
 ```
 
@@ -1579,13 +1575,13 @@ anova(cbcl_int_M1a_gender,cbcl_int_M1b_gender,test="Chisq")  #1a is better
 anova(cbcl_int_M1a_gender,cbcl_int_M2a_gender,test="Chisq") #1a is better
 anova(cbcl_int_M1a_gender,cbcl_int_M2b_gender,test="Chisq") #1a is better
 
-# 1a gender: aic = 16546.9, bic = 16607.6
-# 1a sex: aic = 16689.9, bic = 16744.6
+# 1a gender: aic = 16546.7, bic = 16607.4
+# 1a sex: aic = 16582.9, bic = 16637.5
 # all: choose model 1a gender
 
 ### Sig Results ----
-## cisf: p < 0.0001, beta = -0.669625 (compared to avg)
-## gnc: p < 0.0001, beta = 1.704377 (compared to avg)
+## cisf: p < 0.0001, beta = -0.669480 (compared to avg)
+## gnc: p < 0.0001, beta = 1.704216 (compared to avg)
 
 
 ```
@@ -1743,14 +1739,14 @@ anova(cbcl_aggress_M1a_gender,cbcl_aggress_M1b_gender,test="Chisq")  #1a is bett
 anova(cbcl_aggress_M1a_gender,cbcl_aggress_M2a_gender,test="Chisq") #1a is better
 anova(cbcl_aggress_M1a_gender,cbcl_aggress_M2b_gender,test="Chisq") #1a is better
 
-# 1a gender: aic = 10927.7, bic = 10988.4
-# 1a sex: aic = 11047.9, bic = 11102.6
+# 1a gender: aic = 10927.5, bic = 10988.2
+# 1a sex: aic = 10936.5, bic = 10991.1  
 # all: choose model 1a gender
 
 ### Sig Results ----
-## income: p = 0.000274, beta = -0.0860834
-## cisf: p < 0.0001, beta = -0.2265903 (compared to avg)
-## gnc: p = 0.003567, beta = 0.3008662 (compared to avg)
+## income: p = 0.000249, beta = -0.0864993
+## cisf: p < 0.0001, beta = -0.2265196 (compared to avg)
+## gnc: p = 0.003578, beta = 0.3007607 (compared to avg)
 
 ```
 
@@ -1908,12 +1904,12 @@ anova(cbcl_attn_M1a_gender,cbcl_attn_M2a_gender,test="Chisq") #1a is better
 anova(cbcl_attn_M1a_gender,cbcl_attn_M2b_gender,test="Chisq") #1a is better
 
 # 1a gender: aic = 14450.4, bic = 14511.1
-# 1a sex: aic = 14681.2, bic = 14735.9
+# 1a sex: aic = 14509.2, bic = 14563.9
 # all: choose model 1a gender
 
 ### Sig Results ----
-## cisf: p < 0.0001, beta = -0.707194 (compared to avg)
-## gnc: p = 0.003567, beta = 1.440571 (compared to avg)
+## cisf: p < 0.0001, beta = -0.707134 (compared to avg)
+## gnc: p = 0.003567, beta = 1.440444 (compared to avg)
 
 ```
 
@@ -2070,14 +2066,14 @@ anova(cbcl_anxdep_M1a_gender,cbcl_anxdep_M1b_gender,test="Chisq")  #1a is better
 anova(cbcl_anxdep_M1a_gender,cbcl_anxdep_M2a_gender,test="Chisq") #1a is better
 anova(cbcl_anxdep_M1a_gender,cbcl_anxdep_M2b_gender,test="Chisq") #1a is better
 
-# 1a gender: aic = 14547.6, bic = 14608.3
-# 1a sex: aic = 14701.3, bic = 14755.9
+# 1a gender: aic = 14547.5, bic = 14608.1
+# 1a sex: aic = 14577.3, bic = 14631.9
 # all: choose model 1a gender
 
 ### Sig Results ----
-## eur: p = 0.0477, beta = -0.13915 (compared to avg)
-## cisf: p < 0.0001, beta = -0.45654 (compared to avg)
-## gnc: p = 0.003567, beta = 1.15143 (compared to avg)
+## eur: p = 0.0477, beta = -0.13912 (compared to avg)
+## cisf: p < 0.0001, beta = -0.45649 (compared to avg)
+## gnc: p = 0.003567, beta = 1.15136 (compared to avg)
 
 ```
 
@@ -2235,13 +2231,13 @@ anova(cbcl_withdep_M1a_gender,cbcl_withdep_M2a_gender,test="Chisq") #1a is bette
 anova(cbcl_withdep_M1a_gender,cbcl_withdep_M2b_gender,test="Chisq") #1a is better
 
 # 1a gender: aic = 12455.9, bic = 12516.6
-# 1a sex: aic = 12601.9, bic = 12656.6
+# 1a sex: aic = 12508.3, bic = 12562.9
 # all: choose model 1a gender
 
 ### Sig Results ----
-## income: p = 0.000398, beta = -0.1063 (compared to avg)
-## cisf: p < 0.0001, beta = -0.4785 (compared to avg)
-## gnc: p = 0.003567, beta = 0.9937 (compared to avg)
+## income: p = 0.000384, beta = -0.106393 (compared to avg)
+## cisf: p < 0.0001, beta = -0.478424 (compared to avg)
+## gnc: p < 0.0001, beta = 0.993643 (compared to avg)
 
 ```
 
@@ -2398,14 +2394,14 @@ anova(cbcl_rule_M1a_gender,cbcl_rule_M1b_gender,test="Chisq")  #1a is better
 anova(cbcl_rule_M1a_gender,cbcl_rule_M2a_gender,test="Chisq") #1a is better
 anova(cbcl_rule_M1a_gender,cbcl_rule_M2b_gender,test="Chisq") #1a is better
 
-# 1a gender: aic = 8393.1, bic = 8453.8
-# 1a sex: aic = 8542.7, bic = 8597.4
+# 1a gender: aic = 8393.2, bic = 8453.9
+# 1a sex: aic = 8410.4, bic = 8465.1
 # all: choose model 1a gender
 
 ### Sig Results ----
-## income: p < 0.0001, beta = -0.06484 (compared to avg)
-## cisf: p < 0.0001, beta = -0.1641 (compared to avg)
-## gnc: p < 0.0001, beta = 0.2995 (compared to avg)
+## income: p < 0.0001, beta = -0.064502 (compared to avg)
+## cisf: p < 0.0001, beta = -0.164060 (compared to avg)
+## gnc: p < 0.0001, beta = 0.299418 (compared to avg)
 
 ```
 
@@ -2562,14 +2558,14 @@ anova(cbcl_social_M1a_gender,cbcl_social_M1b_gender,test="Chisq")  #1a is better
 anova(cbcl_social_M1a_gender,cbcl_social_M2a_gender,test="Chisq") #1a is better
 anova(cbcl_social_M1a_gender,cbcl_social_M2b_gender,test="Chisq") #1a is better
 
-# 1a gender: aic = 11802.9, bic = 11863.6
-# 1a sex: aic = 11905.1, bic = 11959.7
+# 1a gender: aic = 11802.7, bic = 11863.4
+# 1a sex: aic = 11810.7, bic = 11865.4
 # all: choose model 1a gender
 
 ### Sig Results ----
-## income: p < 0.0001, beta = -0.1202 (compared to avg)
-## cisf: p = 0.00206, beta = -0.2028 (compared to avg)
-## gnc: p = 0.00183, beta = 0.3692 (compared to avg)
+## income: p < 0.0001, beta = -0.12066 (compared to avg)
+## cisf: p = 0.00207, beta = -0.20269 (compared to avg)
+## gnc: p = 0.00183, beta = 0.36911 (compared to avg)
 
 ```
 
@@ -2726,14 +2722,15 @@ anova(cbcl_somatic_M1a_gender,cbcl_somatic_M1b_gender,test="Chisq")  #1a is bett
 anova(cbcl_somatic_M1a_gender,cbcl_somatic_M2a_gender,test="Chisq") #1a is better
 anova(cbcl_somatic_M1a_gender,cbcl_somatic_M2b_gender,test="Chisq") #1a is better
 
-# 1a gender: aic = 14228.5, bic = 14289.2
-# 1a sex: aic = 14336.0, bic = 14390.7
+# 1a gender: aic = 14228.4, bic = 14289.1
+# 1a sex: aic = 14257.4, bic = 14312.0
 # all: choose model 1a gender
 
 ### Sig Results ----
-## income: p < 0.0001, beta = -0.1202 (compared to avg)
-## cisf: p = 0.00206, beta = -0.2028 (compared to avg)
-## gnc: p = 0.00183, beta = 0.3692 (compared to avg)
+## prs: p = 0.0444, beta = 0.03370
+## income: p = 0.0189, beta = -0.09270 (compared to avg)
+## cisf: p < 0.0001, beta = -0.45326 (compared to avg)
+## gnc: p < 0.0001, beta = 1.05477 (compared to avg)
 
 ```
 
@@ -2884,22 +2881,22 @@ summary(cbcl_thought_M2b_sex)
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(cbcl_thought_M1a_sex,cbcl_thought_M1b_sex,test="Chisq")  #1a is better
-anova(cbcl_thought_M1a_sex,cbcl_thought_M2a_sex,test="Chisq") #2a is better
-anova(cbcl_thought_M2a_sex,cbcl_thought_M2b_sex,test="Chisq") #2a is better
+anova(cbcl_thought_M1a_sex,cbcl_thought_M2a_sex,test="Chisq") #1a is better
+anova(cbcl_thought_M1a_sex,cbcl_thought_M2b_sex,test="Chisq") #1a is better
 
 anova(cbcl_thought_M1a_gender,cbcl_thought_M1b_gender,test="Chisq")  #1a is better
 anova(cbcl_thought_M1a_gender,cbcl_thought_M2a_gender,test="Chisq") #1a is better
 anova(cbcl_thought_M1a_gender,cbcl_thought_M2b_gender,test="Chisq") #1a is better
 
-# 1a gender: aic = 12797.6, bic = 12858.3
-# 2a sex: aic = 13005.0, bic = 13096.1
+# 1a gender: aic = 12797.6, bic = 12858.2
+# 1a sex: aic = 12886.1, bic = 12940.7
 # all: choose model 1a gender
 
 ### Sig Results ----
-## prs: p = 0.00805, beta = 0.035578
-## income: p = 0.00757, beta = -0.084630 (compared to avg)
-## cisf: p < 0.0001, beta = -0.660556 (compared to avg)
-## gnc: p < 0.0001, beta = 1.355486 (compared to avg)
+## prs: p = 0.00815, beta = 0.0355229
+## income: p = 0.00732, beta = -0.0848335 (compared to avg)
+## cisf: p < 0.0001, beta = -0.6605230 (compared to avg)
+## gnc: p < 0.0001, beta = 1.3553761 (compared to avg)
 
 ```
 
@@ -3055,7 +3052,7 @@ anova(ksads_adhd_M1a_gender,ksads_adhd_M2a_gender,test="Chisq") #2a is better
 anova(ksads_adhd_M2a_gender,ksads_adhd_M2b_gender,test="Chisq") #2a is better
 
 # 2a gender: aic = 20824.5, bic = 20927.7
-# 2a sex: aic = 20924.6, bic = 21015.7
+# 2a sex: aic = 20820.4, bic = 20911.5
 # all: choose model 2a gender
 
 ### Sig Results ----
@@ -3210,15 +3207,15 @@ anova(ksads_gad_M1a_sex,ksads_gad_M2d_sex,test="Chisq") #1a is better
 
 anova(ksads_gad_M1a_gender,ksads_gad_M1b_gender,test="Chisq")  #1a is better
 anova(ksads_gad_M1a_gender,ksads_gad_M2a_gender,test="Chisq") #1a is better
-anova(ksads_gad_M1a_gender,ksads_gad_M2b_gender,test="Chisq") #2a is better
+anova(ksads_gad_M1a_gender,ksads_gad_M2b_gender,test="Chisq") #1a is better
 
 # 1a gender: aic = 17986.8, bic = 18047.5
-# 1a sex: aic = 18084.9, bic = 18139.6
+# 1a sex: aic = 17996.6, bic = 18051.2
 # all: choose model 1a gender
 
 ### Sig Results ----
-## cisf: p = 0.029806, beta = -0.37626 (compared to avg)
-## gnc: p = 0.000134, beta = 1.19109 (compared to avg)
+## cisf: p = 0.029826, beta = -0.37621 (compared to avg)
+## gnc: p = 0.000135, beta = 1.19104 (compared to avg)
 
 ```
 
@@ -3364,21 +3361,21 @@ summary(ksads_mdd_M2b_sex)
 
 ### Model Comparisons of AIC/BIC fit indices and Likelihood Ratio Test (LRT) ----
 anova(ksads_mdd_M1a_sex,ksads_mdd_M1b_sex,test="Chisq")  #1a is better
-anova(ksads_mdd_M1a_sex,ksads_mdd_M2a_sex,test="Chisq") #2a is better
-anova(ksads_mdd_M2a_sex,ksads_mdd_M2b_sex,test="Chisq") #2a is better
+anova(ksads_mdd_M1a_sex,ksads_mdd_M2a_sex,test="Chisq") #1a is better
+anova(ksads_mdd_M1a_sex,ksads_mdd_M2b_sex,test="Chisq") #1a is better
 
 anova(ksads_mdd_M1a_gender,ksads_mdd_M1b_gender,test="Chisq")  #1b is better
 anova(ksads_mdd_M1b_gender,ksads_mdd_M2a_gender,test="Chisq") #1b is better
 anova(ksads_mdd_M1b_gender,ksads_mdd_M2b_gender,test="Chisq") #1b is better
 
 # 1b gender: aic = 20657.8, bic = 20754.9
-# 2a sex: aic = 20876.1, bic = 20967.2
+# 1a sex: aic = 20666.1, bic = 20720.7
 # all: choose model 1b gender
 
 ### Sig Results ----
-## cisf: p = 0.0135, beta = -0.653625 (compared to avg)
-## gnc: p < 0.0001, beta = 2.324721 (compared to avg)
-## prs*gnc: p = 0.0369, beta = 0.401658 (compared to avg)
+## cisf: p = 0.0139, beta = -0.650997 (compared to avg)
+## gnc: p < 0.0001, beta = 2.319746 (compared to avg)
+## prs*gnc: p = 0.0368, beta = 0.401572 (compared to avg)
 
 ```
 
@@ -3532,11 +3529,11 @@ anova(ksads_ptsd_M1a_gender,ksads_ptsd_M2a_gender,test="Chisq") #1a is better
 anova(ksads_ptsd_M1a_gender,ksads_ptsd_M2b_gender,test="Chisq") #1a is better
 
 # 1a gender: aic = 18856.2, bic = 18916.9
-# 1a sex: aic = 18953.1, bic = 19007.8
+# 1a sex: aic = 18859.6, bic = 18914.2
 # all: choose model 1a gender
 
 ### Sig Results ----
-## income: p = 0.0186, beta = -0.19249
-## gnc: p < 0.0001, beta = 2.324721 (compared to avg)
+## income: p = 0.0187, beta = -0.19207
+## gnc: p = 0.0196, beta = 0.83332 (compared to avg)
 
 ```
