@@ -734,6 +734,191 @@ lm_resid_ksads <- lm_all_cond_resid_ksads_long %>%
 
 ```
 
+
+### Run grm and eur ancestry pc for all CBCL outcomes at yr4
+
+``` {run grm and eur ancestry pc for all cbcl outcomes, r}
+
+## run lin reg for each cbcl outcome ####
+cbcl_outcome_list <- c("cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
+                  "cbcl_scr_syn_anxdep_t","cbcl_scr_syn_external_t",
+                  "cbcl_scr_syn_internal_t","cbcl_scr_syn_rulebreak_t",
+                  "cbcl_scr_syn_social_t","cbcl_scr_syn_somatic_t",
+                  "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
+                  "cbcl_scr_syn_withdep_t" )
+
+lm_resid_cbcl_list <- list() 
+for (outcome in cbcl_outcome_list) {
+  lm_model <- fitNullModel(eur_yr4_data_reordered, 
+                           outcome = outcome, 
+                           covars = c(paste0("V", 1:8)), 
+                           cov.mat = eur_grm_sparse_subsetted, 
+                           verbose = TRUE)
+  lm_resid_cbcl_list[[outcome]] <- lm_model$fit %>%
+                              rownames_to_column("id") %>%
+                              select(c(id,resid.conditional))
+}
+
+## make one data frame with residuals for all cbcl results
+lm_eur_cond_resid_cbcl_long <- imap_dfr(lm_resid_cbcl_list, ~mutate(.x, .id = .y))
+lm_resid_cbcl <- lm_eur_cond_resid_cbcl_long %>%
+  pivot_wider(names_from = .id, values_from = resid.conditional)
+
+```
+
+### Run grm and eur ancestry pc regressions for KSADS outcomes at yr4
+
+```{run grm and eur ancestry pc for all ksads outcomes, r}
+
+## run lin reg for each ksads outcome ####
+
+ksads_outcome_list <- c("adhd","gad","mdd","ptsd")
+
+lm_resid_ksads_list <- list() # initialize a list to store results  
+for (outcome in ksads_outcome_list) {
+  lm_model <- fitNullModel(eur_yr4_data_reordered, 
+                           outcome = outcome, 
+                           covars = c(paste0("V", 1:8)), 
+                           cov.mat = eur_grm_sparse_subsetted, 
+                           verbose = TRUE,
+                           family = "binomial")
+  lm_resid_ksads_list[[outcome]] <- lm_model$fit %>%
+                              rownames_to_column("id") %>%
+                              select(c(id,resid.conditional))
+}
+
+## make one data frame with residuals for all ksads results
+lm_eur_cond_resid_ksads_long <- imap_dfr(lm_resid_ksads_list, ~mutate(.x, .id = .y))
+lm_resid_ksads <- lm_eur_cond_resid_ksads_long %>%
+  pivot_wider(names_from = .id, values_from = resid.conditional)
+
+```
+
+### Run grm and afr ancestry pc for all CBCL outcomes at yr4
+
+``` {run grm and afr ancestry pc for all cbcl outcomes, r}
+
+## run lin reg for each cbcl outcome ####
+cbcl_outcome_list <- c("cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
+                  "cbcl_scr_syn_anxdep_t","cbcl_scr_syn_external_t",
+                  "cbcl_scr_syn_internal_t","cbcl_scr_syn_rulebreak_t",
+                  "cbcl_scr_syn_social_t","cbcl_scr_syn_somatic_t",
+                  "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
+                  "cbcl_scr_syn_withdep_t" )
+
+lm_resid_cbcl_list <- list() 
+for (outcome in cbcl_outcome_list) {
+  lm_model <- fitNullModel(afr_yr4_data_reordered, 
+                           outcome = outcome, 
+                           covars = c(paste0("V", 1:8)), 
+                           cov.mat = afr_grm_sparse_subsetted, 
+                           verbose = TRUE)
+  lm_resid_cbcl_list[[outcome]] <- lm_model$fit %>%
+                              rownames_to_column("id") %>%
+                              select(c(id,resid.conditional))
+}
+
+## make one data frame with residuals for all cbcl results
+lm_afr_cond_resid_cbcl_long <- imap_dfr(lm_resid_cbcl_list, ~mutate(.x, .id = .y))
+lm_resid_cbcl <- lm_afr_cond_resid_cbcl_long %>%
+  pivot_wider(names_from = .id, values_from = resid.conditional)
+
+```
+
+### Run grm and afr ancestry pc regressions for KSADS outcomes at yr4
+
+```{run grm and afr ancestry pc for all ksads outcomes, r}
+
+## run lin reg for each ksads outcome ####
+
+# ksads_outcome_list <- c("adhd","gad","mdd","ptsd")
+## note: too few adhd subjects to run
+ksads_outcome_list <- c("gad","mdd","ptsd")
+
+lm_resid_ksads_list <- list() # initialize a list to store results  
+for (outcome in ksads_outcome_list) {
+  lm_model <- fitNullModel(afr_yr4_data_reordered, 
+                           outcome = outcome, 
+                           covars = c(paste0("V", 1:8)), 
+                           cov.mat = afr_grm_sparse_subsetted, 
+                           verbose = TRUE,
+                           family = "binomial")
+  lm_resid_ksads_list[[outcome]] <- lm_model$fit %>%
+                              rownames_to_column("id") %>%
+                              select(c(id,resid.conditional))
+}
+
+## make one data frame with residuals for all ksads results
+lm_afr_cond_resid_ksads_long <- imap_dfr(lm_resid_ksads_list, ~mutate(.x, .id = .y))
+lm_resid_ksads <- lm_afr_cond_resid_ksads_long %>%
+  pivot_wider(names_from = .id, values_from = resid.conditional)
+
+```
+
+### Run grm and am admix ancestry pc for all CBCL outcomes at yr4
+
+``` {run grm and am admix ancestry pc for all cbcl outcomes, r}
+
+## run lin reg for each cbcl outcome ####
+cbcl_outcome_list <- c("cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
+                  "cbcl_scr_syn_anxdep_t","cbcl_scr_syn_external_t",
+                  "cbcl_scr_syn_internal_t","cbcl_scr_syn_rulebreak_t",
+                  "cbcl_scr_syn_social_t","cbcl_scr_syn_somatic_t",
+                  "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
+                  "cbcl_scr_syn_withdep_t" )
+
+lm_resid_cbcl_list <- list() 
+for (outcome in cbcl_outcome_list) {
+  lm_model <- fitNullModel(amadmix_yr4_data_reordered, 
+                           outcome = outcome, 
+                           covars = c(paste0("V", 1:8)), 
+                           cov.mat = amadmix_grm_sparse_subsetted, 
+                           verbose = TRUE)
+  lm_resid_cbcl_list[[outcome]] <- lm_model$fit %>%
+                              rownames_to_column("id") %>%
+                              select(c(id,resid.conditional))
+}
+
+## make one data frame with residuals for all cbcl results
+lm_amadmix_cond_resid_cbcl_long <- imap_dfr(lm_resid_cbcl_list, ~mutate(.x, .id = .y))
+lm_resid_cbcl <- lm_amadmix_cond_resid_cbcl_long %>%
+  pivot_wider(names_from = .id, values_from = resid.conditional)
+
+```
+
+### Run grm and am admix ancestry pc regressions for KSADS outcomes at yr4
+
+```{run grm and am admix ancestry pc for all ksads outcomes, r}
+
+## run lin reg for each ksads outcome ####
+
+# ksads_outcome_list <- c("adhd","gad","mdd","ptsd")
+## note: too few adhd subjects to run
+ksads_outcome_list <- c("gad","mdd","ptsd")
+
+lm_resid_ksads_list <- list() # initialize a list to store results  
+for (outcome in ksads_outcome_list) {
+  lm_model <- fitNullModel(amadmix_yr4_data_reordered, 
+                           outcome = outcome, 
+                           covars = c(paste0("V", 1:8)), 
+                           cov.mat = amadmix_grm_sparse_subsetted, 
+                           verbose = TRUE,
+                           family = "binomial")
+  lm_resid_ksads_list[[outcome]] <- lm_model$fit %>%
+                              rownames_to_column("id") %>%
+                              select(c(id,resid.conditional))
+}
+
+## make one data frame with residuals for all ksads results
+lm_amadmix_cond_resid_ksads_long <- imap_dfr(lm_resid_ksads_list, ~mutate(.x, .id = .y))
+lm_resid_ksads <- lm_amadmix_cond_resid_ksads_long %>%
+  pivot_wider(names_from = .id, values_from = resid.conditional)
+
+```
+
+
+
+
 ### Run regression for CBCL outcomes ~ PRS + income-to-needs + age + gender at yr4
 
 ``` {subset data for regression, r}
