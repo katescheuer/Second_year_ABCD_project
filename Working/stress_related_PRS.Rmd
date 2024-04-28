@@ -1473,6 +1473,152 @@ anova(cbcl_total_M1a_gender,cbcl_total_M2b_gender,test="Chisq") #1a is better
 ## gnc: p < 0.0001, beta = 1.279358 (compared to avg)
 
 
+
+### using alternative approach #1 ----
+#### sometimes r2mlm doesn't work for our model; 
+#### this approach is for linear models with little or no missingness and cluster-mean-centering used
+#### 1 - ((residual variance)/(original total variance)) # 1 - % unexplained variance = % explained
+#### orig_Y_var = var(dataframe$outcome) to get original Y variance; we have no missingness and outcome is interval or ratio scale
+orig_Y_var = var(yr4_reg_data$res_c_total) 
+orig_Y_var
+#### model_variances = as.data.frame(VarCorr(modelnamehere)) to obtain variance estimates
+model_variances = as.data.frame(VarCorr(cbcl_total_M1a_gender)) 
+model_variances
+#### res_var = model_variances[rownumber,'vcov'] to get L1 residual variance; look at model_variances first
+res_var = model_variances[2,'vcov'] 
+res_var
+#### calculate
+R2_total_alt1 <- 1 - res_var/orig_Y_var
+R2_total_alt1
+R2_total <- R2_total_alt1
+# [1] 0.5020215
+# 50.20 % of the variance in language posttest was explained by the model
+
+
+## Fixed Effect Slope Coefficient Effect Size using sr^2 ----
+### sr^2 = squared semi-partial correlation
+### % of variance in Y "uniquely" explained by that predictor (not overlapping with other Xs)
+### sr^2 = ((pr^2)*(1-R^2))/(1-pr^2), where R^2 = total R^2 computed earlier, and pr^2 = partial correlation squared = (t^2)/((t^2)+df)
+### using substitution then:
+### sr2 = (( t^2 /( t^2 + df))*(1 – R^2))/(1 – ( t^2 /( t^2 + df)))
+### basically, we need two things: the residual df, and the t-value for each coefficient
+###
+### (a) extract residual df ----
+###      AIC       BIC    logLik  deviance  df.resid 
+### 24876.09  24988.26 -12420.05  24840.09   3740.00 
+### to extract residual df (fifth element of the lme4 "AIC" table above) we use this general code:
+### res_df <- as.numeric(summary(modelname)$AICtab[5])
+res_df <- as.numeric(summary(cbcl_total_M1a_gender)$AICtab[5])
+res_df 
+### (b) extract t-values ----
+###                                Estimate Std. Error        df t value             Pr(>|t|)    
+### g00 (Intercept)                40.96125    0.23886 207.41991 171.488 < 0.0000000000000002 ***
+### g10 ZIQ_verb_CMC                4.61216    0.12022 182.73802  38.363 < 0.0000000000000002 ***
+### g20 minority_CMC               -0.63078    0.45734  88.23155  -1.379              0.17131    
+### g01 ZIQ_verb_agg                3.50781    0.27058 222.65833  12.964 < 0.0000000000000002 ***
+### g02 Zminpct_agg                 0.11474    0.29303 213.66935   0.392              0.69576    
+### g30 ZIQ_verb_CMC:minority_CMC   0.23775    0.27486 493.51795   0.865              0.38747    
+### g11 ZIQ_verb_CMC:ZIQ_verb_agg  -0.33252    0.13612 189.70341  -2.443              0.01549 *  
+### g12 ZIQ_verb_CMC:Zminpct_agg   -0.32139    0.12184  94.24653  -2.638              0.00976 ** 
+### g21 minority_CMC:ZIQ_verb_agg  -0.75931    0.33680  67.52444  -2.254              0.02742 *  
+### g22 minority_CMC:Zminpct_agg   -0.03575    0.29567  50.51102  -0.121              0.90424    
+### g03 ZIQ_verb_agg:Zminpct_agg    0.11552    0.14997 253.95101   0.770              0.44184 
+###
+### above is called the "coef" table in lme4; to extract a value we can use this general code:
+### g_tval <- as.numeric(summary(modelname)$coef[row,column])
+zcmc_prs_tval <- summary(cbcl_total_M1a_gender)$coef[2,4]
+zcmc_age_tval <- summary(cbcl_total_M1a_gender)$coef[3,4]
+zcmc_income_tval <- summary(cbcl_total_M1a_gender)$coef[4,4]
+cisf_tval <- summary(cbcl_total_M1a_gender)$coef[5,4]
+gnc_tval <- summary(cbcl_total_M1a_gender)$coef[5,4]
+
+# g10_tval <- summary(Posttest_M3)$coef[2,4] 
+# g20_tval <- summary(Posttest_M3)$coef[3,4] 
+# g01_tval <- summary(Posttest_M3)$coef[4,4] 
+# g02_tval <- summary(Posttest_M3)$coef[5,4] 
+# g30_tval <- summary(Posttest_M3)$coef[6,4] 
+# g11_tval <- summary(Posttest_M3)$coef[7,4] 
+# g12_tval <- summary(Posttest_M3)$coef[8,4] 
+# g21_tval <- summary(Posttest_M3)$coef[9,4] 
+# g22_tval <- summary(Posttest_M3)$coef[10,4] 
+# g03_tval <- summary(Posttest_M3)$coef[11,4] 
+### check to make sure they are correctly extracted
+tvals <- as.data.frame(c(
+zcmc_prs_tval,
+zcmc_age_tval,
+zcmc_income_tval,
+cisf_tval,
+gnc_tval))
+# tvals <- as.data.frame(c(
+# g10_tval,
+# g20_tval,
+# g01_tval,
+# g02_tval,
+# g30_tval,
+# g11_tval,
+# g12_tval,
+# g21_tval,
+# g22_tval,
+# g03_tval))
+colnames(tvals) <- "tvals"
+tvals
+### (c) now compute the approx sr^2 values ----
+### note that you can use ^2 or **2 to square a value in R
+zcmc_prs_sr2 <- ((zcmc_prs_tval**2/(zcmc_prs_tval**2+res_df))*(1-R2_total))/(1- (zcmc_prs_tval**2/(zcmc_prs_tval**2+res_df)))
+zcmc_age_sr2 <- ((zcmc_age_tval**2/(zcmc_age_tval**2+res_df))*(1-R2_total))/(1- (zcmc_age_tval**2/(zcmc_age_tval**2+res_df)))
+zcmc_income_sr2 <- ((zcmc_income_tval**2/(zcmc_income_tval**2+res_df))*(1-R2_total))/(1- (zcmc_income_tval**2/(zcmc_income_tval**2+res_df)))
+cisf_sr2 <- ((cisf_tval**2/(cisf_tval**2+res_df))*(1-R2_total))/(1- (cisf_tval**2/(cisf_tval**2+res_df)))
+gnc_sr2 <- ((gnc_tval**2/(gnc_tval**2+res_df))*(1-R2_total))/(1- (gnc_tval**2/(gnc_tval**2+res_df)))
+# g10_sr2 <- ((g10_tval**2/(g10_tval**2+res_df))*(1-R2_total))/(1- (g10_tval**2/(g10_tval**2+res_df)))
+# g20_sr2 <- ((g20_tval**2/(g20_tval**2+res_df))*(1-R2_total))/(1- (g20_tval**2/(g20_tval**2+res_df)))
+# g01_sr2 <- ((g01_tval**2/(g01_tval**2+res_df))*(1-R2_total))/(1- (g01_tval**2/(g01_tval**2+res_df)))
+# g02_sr2 <- ((g02_tval**2/(g02_tval**2+res_df))*(1-R2_total))/(1- (g02_tval**2/(g02_tval**2+res_df)))
+# g30_sr2 <- ((g30_tval**2/(g30_tval**2+res_df))*(1-R2_total))/(1- (g30_tval**2/(g30_tval**2+res_df)))
+# g11_sr2 <- ((g11_tval**2/(g11_tval**2+res_df))*(1-R2_total))/(1- (g11_tval**2/(g11_tval**2+res_df)))
+# g12_sr2 <- ((g12_tval**2/(g12_tval**2+res_df))*(1-R2_total))/(1- (g12_tval**2/(g12_tval**2+res_df)))
+# g21_sr2 <- ((g21_tval**2/(g21_tval**2+res_df))*(1-R2_total))/(1- (g21_tval**2/(g21_tval**2+res_df)))
+# g22_sr2 <- ((g22_tval**2/(g22_tval**2+res_df))*(1-R2_total))/(1- (g22_tval**2/(g22_tval**2+res_df)))
+# g03_sr2 <- ((g03_tval**2/(g03_tval**2+res_df))*(1-R2_total))/(1- (g03_tval**2/(g03_tval**2+res_df)))
+### see results
+sr2vals <- as.data.frame(c(
+  zcmc_prs_sr2,
+  zcmc_age_sr2,
+  zcmc_income_sr2,
+  cisf_sr2,
+  gnc_sr2))
+# sr2vals <- as.data.frame(c(
+#   g10_sr2,
+#   g20_sr2,
+#   g01_sr2,
+#   g02_sr2,
+#   g30_sr2,
+#   g11_sr2,
+#   g12_sr2,
+#   g21_sr2,
+#   g22_sr2,
+#   g03_sr2))
+colnames(sr2vals) <- "sr2vals"
+sr2vals
+### 1  0.194371428603
+### 2  0.000251239098
+### 3  0.022196634980
+### 4  0.000020250762
+### 5  0.000098812669
+### 6  0.000788130621
+### 7  0.000918969163
+### 8  0.000671262182
+### 9  0.000001930886
+### 10 0.000078364863
+### 
+### The first predictor, student-level verbal skills, uniquely explained 19.44% of the variance 
+### in language posttests. In contrast, the second predictor, student minority status, uniquely 
+### explained less than .03% of the variance. (etc.)
+### 
+### to round the values to 2-decimals (APA format) use:
+sr2vals_round <- round(sr2vals,2)
+sr2vals_round
+
+
 ```
 
 
