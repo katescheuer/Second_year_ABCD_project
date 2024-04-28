@@ -776,10 +776,7 @@ yr4_reg_data <- yr4_data %>%
                   raw_k_ptsd = ptsd
                 ) %>%
 
-                #remove subjects without sex info
-                filter(gender != is.na(sex)) %>%
-  
-                mutate(gender = case_when(gender == 1 ~ "cism",
+                  mutate(gender = case_when(gender == 1 ~ "cism",
                                           gender == 2 ~ "cisf",
                                           gender == 3 ~ "gnc", #trans m
                                           gender == 4 ~ "gnc", #trans f
@@ -789,9 +786,15 @@ yr4_reg_data <- yr4_data %>%
                                           gender == 999 ~ NA,
                 )) %>%
                                           
+                #remove subjects without sex info
+                filter(sex != is.na(sex)) %>%
+
                 #remove subjects without gender info
                 filter(gender != is.na(gender)) %>%
-                      
+    
+                #remove subjects without income info
+                filter(income_to_needs != is.na(income_to_needs)) %>%
+
                 left_join(lm_resid_cbcl,by="id") %>%
                 left_join(lm_resid_ksads,by="id") %>%
                 rename(
@@ -932,6 +935,11 @@ ggplot(aes(y=age,x=gender),data=yr4_reg_data) +
 ggplot(aes(y=income_to_needs,x=gender),data=yr4_reg_data) +
   geom_violin(fill="lightblue") +
   geom_boxplot(width=0.2,alpha=0.2) +
+  theme_classic() 
+ggplot(aes(x=ancestry,fill=gender),data=yr4_reg_data) +
+  # geom_violin(fill="lightblue") +
+  # geom_boxplot(width=0.2,alpha=0.2) +
+  geom_bar(position="dodge") +
   theme_classic() 
 # ggplot(aes(y=raw_c_total,x=gender),data=yr4_reg_data) +
 ggplot(aes(y=res_c_total,x=gender),data=yr4_reg_data) +
@@ -1291,21 +1299,13 @@ cbcl_total_M1a_gender
 
 # Extract L1 Predicted and Residual Values to Add to Main L1 Dataset ----
 ### predicted values (Yhats)
-# yr4_reg_data$M3_Yhat <- as.numeric(predict(cbcl_total_M1a_gender))
+yr4_reg_data$M3_Yhat <- as.numeric(predict(cbcl_total_M1a_gender))
 # create Z score version
-yr4_reg_data$ZM3_Yhat = as.numeric(scale(yr4_reg_data$M3_Yhat))
+yr4_reg_data$ZM3_Yhat <- as.numeric(scale(yr4_reg_data$M3_Yhat))
 ### residual values (the r's, Y - Yhat)
-# yr4_reg_data$M3_L1resid <- as.numeric(resid(cbcl_total_M1a_gender))
+yr4_reg_data$M3_L1resid <- as.numeric(resid(cbcl_total_M1a_gender))
 # create Z score version
-# yr4_reg_data$ZM3_L1resid = as.numeric(scale(yr4_reg_data$M3_L1resid))
-test <- as.data.frame(cbind(
-                            as.numeric(predict(cbcl_total_M1a_gender)),
-                            as.numeric(scale(as.numeric(predict(cbcl_total_M1a_gender)))),
-                            summary(cbcl_total_M1a_gender)$residuals,
-                            as.numeric(scale(summary(cbcl_total_M1a_gender)$residuals))))
-colnames(test) <- c("M3_Yhat","ZM3_Yhat","M3_L1resid","ZM3_L1resid")
-# yr4_reg_data$ZM3_L1resid = as.numeric(scale(yr4_reg_data$M3_L1resid))
-
+yr4_reg_data$ZM3_L1resid <- as.numeric(scale(yr4_reg_data$M3_L1resid))
 
 ## Extract L2 Predicted and Residual Values to Add to Previously Built L2 Aggregate Dataset ----
 ### because L2 does not have predicted values that are disentangled from L1, we focus on 
@@ -1313,61 +1313,31 @@ colnames(test) <- c("M3_Yhat","ZM3_Yhat","M3_L1resid","ZM3_L1resid")
 ### (if there are no L2 predictors, then linearity and homoscedasticity at L2 are irrelevant; 
 ### if this is your situation, only normality and independence would be assessed)
 ### extract L2 residuals using ranef() function
-### general: temporaryfile <- ranef(modelname)$L2IDvariable["nameofcoefficient"]
 intercept <- ranef(cbcl_total_M1a_gender)$site["(Intercept)"] #intercept is always as "(Intercept)"
 colnames(intercept) = c("RE_int")
 rownames(intercept) <- NULL
-# slope_iqverbal <- ranef(cbcl_total_M1a_gender)$site["ZIQ_verb_CMC"]
-# colnames(slope_iqverbal) = c("RE_iqverbal")
-# rownames(slope_iqverbal) <- NULL
-# slope_minority <- ranef(cbcl_total_M1a_gender)$site["minority_CMC"]
-# colnames(slope_minority) = c("RE_minority")
-# rownames(slope_minority) <- NULL
-### standardize (z-score) the residuals
 intercept$ZRE_int <- as.numeric(scale(intercept$RE_int), scale = TRUE)
-# slope_iqverbal$ZRE_iqverbal <- as.numeric(scale(slope_iqverbal$RE_iqverbal), scale = TRUE)
-# slope_minority$ZRE_minority <- as.numeric(scale(slope_minority$RE_minority), scale = TRUE)
-### combine the L2 residuals
-# RE_file <- bind_cols(intercept,slope_iqverbal,slope_minority)
 RE_file <- intercept
-### add L2id to the L2 residuals (the L2id will be in same descending order; make sure L2agg ID is in descending order)
 RE_file$site <- row.names(ranef(cbcl_total_M1a_gender)$site)
-# RE_file$site <- yr4_reg_data$site
-### merge to L2 aggregate file by L2id
-# L2agg <- merge(L2agg,RE_file,by = "site")
-
 
 ## Assumption #1 Linearity ----
 ### visually inspect residual-predicted plot for evidence of curvilinearity
 ### general: nameplot <- plot(data$predictedvariablename, data$residualvariablename)
 ### level 1 ----
-plot(test$ZM3_Yhat, 
-     test$ZM3_L1resid, 
-     main = "L1 Predicted vs. Residual Plot",
-     xlab = "Predicted Values (Z)", 
-     ylab = "Residual Values (Z)",
-     pch=1, col = "black")
-abline(lm(test$ZM3_L1resid ~ test$ZM3_Yhat), col="red")
 
-
-
-
-
-
-
-
+ggplot(aes(x=ZM3_Yhat,y=ZM3_L1resid),data=yr4_reg_data) +
+  geom_point(aes(color=gender)) +
+  labs(x="Predicted Values (Z)",y="Residual Values (Z)") +
+  geom_smooth(method="lm",color="black") +
+  theme_bw()
 
 ## Assumption #2 Normality ----
 ### visually inspect residuals (skew/kurtosis tests can miss multimodality!) ----
 ### check L1 residuals
-hist(test$ZM3_L1resid)
-# hist(yr4_reg_data$ZM3_L1resid) #we see some left skew but fairly bell shaped
+hist(yr4_reg_data$ZM3_L1resid)
 
 ### check L2 residuals **from 2L** file
 hist(RE_file$ZRE_int)
-# hist(L2agg$ZRE_int) #we see fairly symmetric bell curve (appears normal)
-# hist(L2agg$ZRE_iqverbal) #we see fairly symmetric bell curve (appears normal)
-# hist(L2agg$ZRE_minority) #we see fairlysymmetric bell curve (appears normal)
 
 ### statistically evaluate residuals for normality ----
 ### we will evaluate skew and kurtosis with “moments” package skewness() and kurtosis() functions
@@ -1379,37 +1349,24 @@ hist(RE_file$ZRE_int)
 #### the “moments” package leaves kurtosis as it is: E(Z^4) = 3
 #### to match with psych package kurtosis estimate, subtract 3
 #### level 1 residuals ----
-skewness(test$ZM3_L1resid)
-kurtosis(test$ZM3_L1resid)
+skewness(yr4_reg_data$ZM3_L1resid)
+kurtosis(yr4_reg_data$ZM3_L1resid)
 #### level 2 residuals ----
 ##### intercept ----
 skewness(RE_file$ZRE_int) 
 kurtosis(RE_file$ZRE_int) 
-##### random slope for verbal relation with DV ----
-# skewness(L2agg$ZRE_iqverbal) 
-# kurtosis(L2agg$ZRE_iqverbal) 
-##### random slope for minoritized student relation with DV ----
-# skewness(L2agg$ZRE_minority) 
-# kurtosis(L2agg$ZRE_minority) 
 
 ### formal statistical tests of skew and kurtosis
 ### skew test general: agostino.test(data$variablename, alternative = c("two.sided"))
 ### kurtosis test general: anscombe.test(data$variablename, alternative = c("two.sided"))
 #### level 1 residuals
-##### there is significant (left) skew and kurtosis (leptokurtosis/pointy) in L1 residuals
-agostino.test(test$ZM3_L1resid, alternative = c("two.sided"))
-anscombe.test(test$ZM3_L1resid, alternative = c("two.sided"))
+library(moments)
+agostino.test(yr4_reg_data$ZM3_L1resid, alternative = c("two.sided"))
+anscombe.test(yr4_reg_data$ZM3_L1resid, alternative = c("two.sided"))
 #### level 2 residuals
-##### there is no significant skew or kurtosis in L2 residuals
 ##### intercept
 agostino.test(RE_file$ZRE_int, alternative = c("two.sided"))
 anscombe.test(RE_file$ZRE_int, alternative = c("two.sided"))
-##### verbal slope
-# agostino.test(L2agg$ZRE_iqverbal, alternative = c("two.sided"))
-# anscombe.test(L2agg$ZRE_iqverbal, alternative = c("two.sided"))
-##### minoritized student status slope
-# agostino.test(L2agg$ZRE_minority, alternative = c("two.sided"))
-# anscombe.test(L2agg$ZRE_minority, alternative = c("two.sided"))
 
 
 ```
