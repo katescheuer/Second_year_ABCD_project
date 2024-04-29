@@ -916,6 +916,347 @@ lm_resid_ksads <- lm_amadmix_cond_resid_ksads_long %>%
 
 ```
 
+
+
+```{r}
+
+mylm <- fitNullModel(test, 
+                           outcome = "raw_c_thought", 
+                           covars = c(paste0("V", 1:8),
+                                      "zcmc_prs","zcmc_age","zcmc_income",
+                                      "sex_cmc_cisf"),
+                           cov.mat = amadmix_grm_sparse_subsetted, 
+                           verbose = TRUE
+                           # family = "binomial")
+
+rownames(test) <- test$id
+
+
+test <- amadmix_yr4_data_reordered %>%
+        rownames_to_column(var="src_subject_id") %>%
+                select(c("src_subject_id","prs_all_mhc_val",
+                         "demo_gender_id_v2_l",
+                         "sex",
+                         "income_to_needs","site","interview_age",
+                         "ancestry",
+                         "cbcl_scr_syn_aggressive_t","cbcl_scr_syn_attention_t",
+                         "cbcl_scr_syn_anxdep_t","cbcl_scr_syn_external_t",
+                         "cbcl_scr_syn_internal_t","cbcl_scr_syn_rulebreak_t",
+                         "cbcl_scr_syn_social_t","cbcl_scr_syn_somatic_t",
+                         "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
+                         "cbcl_scr_syn_withdep_t",
+                         # "adhd", #only 1 afr, 2 amadmix, 6 eur cases so do not analyze
+                         "gad","mdd","ptsd",
+                         "V1","V2","V3","V4","V5","V6","V7","V8"
+                         )) %>%
+                rename(
+                  id = src_subject_id,
+                  gender = demo_gender_id_v2_l,
+                  age = interview_age,
+                  prs = prs_all_mhc_val,
+                  raw_c_aggress = cbcl_scr_syn_aggressive_t,
+                  raw_c_attn = cbcl_scr_syn_attention_t,
+                  raw_c_anxdep = cbcl_scr_syn_anxdep_t,
+                  raw_c_ext = cbcl_scr_syn_external_t,
+                  raw_c_int = cbcl_scr_syn_internal_t,
+                  raw_c_rule = cbcl_scr_syn_rulebreak_t,
+                  raw_c_social = cbcl_scr_syn_social_t,
+                  raw_c_somatic = cbcl_scr_syn_somatic_t,
+                  raw_c_thought = cbcl_scr_syn_thought_t,
+                  raw_c_total = cbcl_scr_syn_totprob_t,
+                  raw_c_withdep = cbcl_scr_syn_withdep_t,
+                  # raw_k_adhd = adhd, #only 1 afr, 2 amadmix, 6 eur cases so do not analyze
+                  raw_k_gad = gad,
+                  raw_k_mdd = mdd,
+                  raw_k_ptsd = ptsd
+                ) %>%
+
+                  mutate(gender = case_when(gender == 1 ~ "cism",
+                                          gender == 2 ~ "cisf",
+                                          gender == 3 ~ "gnc", #trans m
+                                          gender == 4 ~ "gnc", #trans f
+                                          gender == 5 ~ "gnc", #genderqueer
+                                          gender == 6 ~ "gnc", #other
+                                          gender == 777 ~ NA,
+                                          gender == 999 ~ NA,
+                )) %>%
+                                          
+                # #remove subjects without sex info
+                # filter(sex != is.na(sex)) %>%
+                # 
+                # #remove subjects without gender info
+                # filter(gender != is.na(gender)) %>%
+                # 
+                # #remove subjects without income info
+                # filter(income_to_needs != is.na(income_to_needs)) %>%
+
+                left_join(lm_resid_cbcl,by="id") %>%
+                left_join(lm_resid_ksads,by="id") %>%
+                rename(
+                        res_c_aggress = cbcl_scr_syn_aggressive_t,
+                        res_c_attn = cbcl_scr_syn_attention_t,
+                        res_c_anxdep = cbcl_scr_syn_anxdep_t,
+                        res_c_ext = cbcl_scr_syn_external_t,
+                        res_c_int = cbcl_scr_syn_internal_t,
+                        res_c_rule = cbcl_scr_syn_rulebreak_t,
+                        res_c_social = cbcl_scr_syn_social_t,
+                        res_c_somatic = cbcl_scr_syn_somatic_t,
+                        res_c_thought = cbcl_scr_syn_thought_t,
+                        res_c_total = cbcl_scr_syn_totprob_t,
+                        res_c_withdep = cbcl_scr_syn_withdep_t,
+                        # res_k_adhd = adhd, #only 1 afr, 2 amadmix, 6 eur cases so do not analyze
+                        res_k_gad = gad,
+                        res_k_mdd = mdd,
+                        res_k_ptsd = ptsd
+                ) %>%
+        
+### dummy code, effect code, and cluster mean center categorical variables ####
+## dummy
+# sex - male = 0, female = 1
+# gender - cismale: gen_dum_cisf = 0, gen_dum_gnc = 0
+# gender - cisfemale: gen_dum_cisf = 1, gen_dum_gnc = 0
+# gender - gnc/other: gen_dum_cisf = 0, gen_dum_gnc = 1
+# ancestry - amadmix: anc_dum_afr = 0, anc_dum_eur = 0
+# ancestry - afr: anc_dum_afr = 1, anc_dum_eur = 0
+# ancestry - eur: anc_dum_afr = 0, anc_dum_eur = 1
+## effect
+# sex - male = -1, female = 1
+# gender - cismale: gen_eff_cisf = -1, gen_eff_gnc = -1
+# gender - cisfemale: gen_eff_cisf = 1, gen_eff_gnc = 0
+# gender - gnc/other: gen_eff_cisf = 0, gen_eff_gnc = 1
+# ancestry - amadmix: anc_eff_afr = -1, anc_eff_eur = -1
+# ancestry - afr: anc_eff_afr = 1, anc_eff_eur = 0
+# ancestry - eur: anc_eff_afr = 0, anc_eff_eur = 1
+
+                # dummy coding
+                mutate(sex_dum_cisf = case_when(sex == 1 ~ 0,
+                                                sex == 2 ~ 1)) %>%
+                mutate(gen_dum_cisf = case_when(gender == "cism" ~ 0,
+                                                gender == "cisf" ~ 1,
+                                                gender == "gnc" ~ 0)) %>%
+                mutate(gen_dum_gnc = case_when(gender == "cism" ~ 0,
+                                                gender == "cisf" ~ 0,
+                                                gender == "gnc" ~ 1)) %>%
+                mutate(anc_dum_afr = case_when(ancestry == "AmAdmix" ~ 0,
+                                               ancestry == "Afr" ~ 1,
+                                               ancestry == "Eur" ~ 0)) %>%
+                mutate(anc_dum_eur = case_when(ancestry == "AmAdmix" ~ 0,
+                                               ancestry == "Afr" ~ 0,
+                                               ancestry == "Eur" ~ 1)) %>%
+                # effect coding
+                mutate(sex_eff_cisf = case_when(sex == 1 ~ -1,
+                                                sex == 2 ~ 1)) %>%
+                mutate(gen_eff_cisf = case_when(gender == "cism" ~ -1,
+                                                gender == "cisf" ~ 1,
+                                                gender == "gnc" ~ 0)) %>%
+                mutate(gen_eff_gnc = case_when(gender == "cism" ~ -1,
+                                                gender == "cisf" ~ 0,
+                                                gender == "gnc" ~ 1)) %>%
+                # mutate(anc_eff_afr = as.numeric(car::recode(anc_dum_afr, "0=-1;1=1"))) %>%
+                mutate(anc_eff_afr = case_when(ancestry == "AmAdmix" ~ -1,
+                                               ancestry == "Afr" ~ 1,
+                                               ancestry == "Eur" ~ 0)) %>%
+                mutate(anc_eff_eur = case_when(ancestry == "AmAdmix" ~ -1,
+                                               ancestry == "Afr" ~ 0,
+                                               ancestry == "Eur" ~ 1)) %>%
+                # cluster mean center categorical predictors
+                mutate(sex_cmc_cisf = as.numeric(center(sex_eff_cisf, 
+                                     type="CWC", cluster = site))) %>%
+                mutate(gen_cmc_cisf = as.numeric(center(gen_eff_cisf, 
+                                     type="CWC", cluster = site))) %>%
+                mutate(gen_cmc_gnc = as.numeric(center(gen_eff_gnc, 
+                                     type="CWC", cluster = site))) %>%
+                mutate(anc_cmc_afr = as.numeric(center(anc_eff_afr,
+                                     type="CWC", cluster = site))) %>%
+                mutate(anc_cmc_eur = as.numeric(center(anc_eff_eur,
+                                     type="CWC", cluster = site))) %>%
+                # cluster mean center continuous predictors
+                mutate(cmc_prs = as.numeric(center(prs,type="CWC",cluster=site))) %>%
+                mutate(cmc_age = as.numeric(center(age,type="CWC",cluster=site))) %>%
+                mutate(cmc_income_to_needs = as.numeric(center(income_to_needs,
+                                                        type="CWC",cluster=site))) %>%
+                # Z score continuous predictors ()
+                mutate(zcmc_prs = cmc_prs) %>%
+                mutate(zcmc_age = as.numeric(scale(cmc_age, scale=TRUE))) %>%
+                mutate(zcmc_income = as.numeric(scale(cmc_income_to_needs, scale=TRUE))) %>%
+
+                # # remove subjects without cbcl data
+                # filter(!is.na(res_c_total)) %>%
+                # 
+                # # remove subjects without ksads data
+                # filter(!is.na(res_k_ptsd)) %>%
+
+                #reorder columns so easier to work with
+                select(id,site,prs,age,income_to_needs,gender,sex,ancestry,
+                       V1,V2,V3,V4,V5,V6,V7,V8,
+                       zcmc_prs,zcmc_age,zcmc_income,
+                       sex_dum_cisf, sex_eff_cisf, sex_cmc_cisf,
+                       gen_dum_cisf,gen_dum_gnc,
+                       gen_eff_cisf,gen_eff_gnc,
+                       gen_cmc_cisf,gen_cmc_gnc,
+                       anc_dum_afr,anc_dum_eur,
+                       anc_eff_afr,anc_eff_eur,
+                       anc_cmc_afr,anc_cmc_eur,
+                       res_c_total,res_c_ext,res_c_int,
+                       res_c_aggress,res_c_attn,res_c_anxdep,res_c_withdep,
+                       res_c_rule,res_c_social,res_c_somatic,res_c_thought,
+                       # res_k_adhd, #only 1 afr, 2 amadmix, 6 eur cases so do not analyze
+                       res_k_gad,res_k_mdd,res_k_ptsd,
+                       raw_c_total,raw_c_ext,raw_c_int,
+                       raw_c_aggress,raw_c_attn,raw_c_anxdep,raw_c_withdep,
+                       raw_c_rule,raw_c_social,raw_c_somatic,raw_c_thought,
+                       # raw_k_adhd, #only 1 afr, 2 amadmix, 6 eur cases so do not analyze
+                       raw_k_gad,raw_k_mdd,raw_k_ptsd
+                       )
+
+
+
+
+
+### ext variance explained by model (r^2) ----
+#### 1 - ((residual variance)/(original ext variance)) # 1 - % unexplained variance = % explained
+#### orig_Y_var = var(datamadmixame$outcome) to get original Y variance
+orig_Y_var = var(yr4_reg_data$res_k_ptsd) 
+orig_Y_var
+#### model_variances = as.data.frame(VarCorr(modelnamehere)) to obtain variance estimates
+model_variances = as.data.frame(VarCorr(ksads_ptsd_M1b_sex)) 
+model_variances
+#### res_var = model_variances[rownumber,'vcov'] to get L1 residual variance; look at model_variances first
+res_var = model_variances[2,'vcov'] 
+res_var
+#### calculate
+R2_ptsd <- 1 - res_var/orig_Y_var
+R2_ptsd
+
+## variance explained by each predictor (sr^2) ----
+### sr^2 = squared semi-partial correlation
+### % of variance in Y "uniquely" explained by that predictor (not overlapping with other Xs)
+### extract residual df 
+res_df <- as.numeric(summary(ksads_ptsd_M1b_sex)$AICtab[5])
+res_df 
+### extract t-values
+tvals <- data.frame(cbind(row.names(summary(ksads_ptsd_M1b_sex)$coef), #predictor names
+                          summary(ksads_ptsd_M1b_sex)$coef[,4]) #t values
+              )
+colnames(tvals) <- c("predictor","tval")
+tvals$tval <- as.numeric(tvals$tval)
+### now compute the approx sr^2 values
+sr2vals <- tvals %>% 
+                    mutate(sr2 = ((tvals$tval**2/(tvals$tval**2+res_df))*(1-R2_thought))/
+                      (1- (tvals$tval**2/(tvals$tval**2+res_df)))) %>%
+                    mutate(percent_sr2 = sr2*100)
+sr2vals
+
+# Extract L1 Predicted and Residual Values to Add to Main L1 Dataset ----
+### predicted values (Yhats)
+yr4_reg_data$ksads_ptsd_M1b_sex_Yhat <- as.numeric(predict(ksads_ptsd_M1b_sex))
+# create Z score version
+yr4_reg_data$Zksads_ptsd_M1b_sex_Yhat <- as.numeric(scale(yr4_reg_data$ksads_ptsd_M1b_sex_Yhat))
+### residual values (the r's, Y - Yhat)
+yr4_reg_data$ksads_ptsd_M1b_sex_L1resid <- as.numeric(resid(ksads_ptsd_M1b_sex))
+# create Z score version
+yr4_reg_data$Zksads_ptsd_M1b_sex_L1resid <- as.numeric(
+                                                scale(yr4_reg_data$ksads_ptsd_M1b_sex_L1resid))
+
+## Extract L2 Predicted and Residual Values to Add to Previously Built L2 Aggregate Dataset ----
+### no L2 predictors so only normality and independence assessed
+### extract L2 residuals using ranef() function
+intercept <- ranef(ksads_ptsd_M1b_sex)$site["(Intercept)"] #intercept is always as "(Intercept)"
+colnames(intercept) = c("RE_int")
+rownames(intercept) <- NULL
+intercept$ZRE_int <- as.numeric(scale(intercept$RE_int), scale = TRUE)
+RE_file <- intercept
+RE_file$site <- row.names(ranef(ksads_ptsd_M1b_sex)$site)
+
+## Assumption #1 and 2 Linearity and Heteroskedasticity ----
+### visually inspect residual-predicted plot for evidence of curvilinearity
+### level 1 ----
+
+ggplot(aes(x=Zksads_ptsd_M1b_sex_Yhat,
+           y=Zksads_ptsd_M1b_sex_L1resid),data=yr4_reg_data) +
+  geom_point(aes(color=sex)) +
+  labs(x="Predicted Values (Z)",y="Residual Values (Z)") +
+  geom_smooth(method="lm",color="black") +
+  theme_bw()
+
+### (if fan shape)
+### Robust SEs ----
+### Let’s move forward now to estimate our model using “robust” SEs that are fitted using an 
+### iterative algorithm that down-weights outliers and assumes no normality of the data.
+### general: use rlmer() function from “robustlmm” package, instead of lmer() in lme4 package
+### note that this function takes a few minutes to estimate, keep your patience hat on /!\ 
+ksads_ptsd_M1b_sex_robustSE <- rlmer(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
+                              sex_cmc_cisf +
+                            (1|site),
+                          data=yr4_reg_data, REML=FALSE)
+summary(ksads_ptsd_M1b_sex_robustSE)
+summary(ksads_ptsd_M1b_sex) # for comparison with the robust estimate
+### results substantively the same (what was significant remains sig, what was not is not sig)
+### so, non-normality present in our data does not alter our conclusions
+amadmix_ksads_ptsd_M1b_sex_robustSE <- ksads_ptsd_M1b_sex_robustSE
+# similar enough that fan pattern not concerning
+
+data.frame(summary(ksads_ptsd_M1b_sex_robustSE)$coefficients) %>%
+  rename(robust_est = Estimate,
+         robust_se = Std..Error,
+         robust_tval = t.value) %>%
+  bind_cols(summary(ksads_ptsd_M1b_sex)$coef) %>%
+  rename(notrobust_est = Estimate,
+         notrobust_se = `Std. Error`,
+         notrobust_df = `df`,
+         notrobust_tval = `t value`,
+         notrobust_pval = `Pr(>|t|)`) %>%
+  select(robust_est,notrobust_est,
+         robust_se,notrobust_se,
+         robust_tval,notrobust_tval,
+         notrobust_df,notrobust_pval)
+
+NOTE: SOME RESIDUALS ARE VERY VERY LARGE
+NOTE: THESE ARE EXTREMELY DIFFERENT
+NOTE: HEAVILY SKEWED 
+
+
+## Assumption #2 Normality ----
+### visually inspect residuals (skew/kurtosis tests can miss multimodality!) ----
+### check L1 residuals
+hist(yr4_reg_data$Zksads_ptsd_M1b_sex_L1resid)
+
+### check L2 residuals **from 2L** file
+hist(RE_file$ZRE_int)
+
+### formal statistical tests of skew and kurtosis
+#### level 1 residuals
+agostino.test(yr4_reg_data$Zksads_ptsd_M1b_sex_L1resid, alternative = c("two.sided"))
+anscombe.test(yr4_reg_data$Zksads_ptsd_M1b_sex_L1resid, alternative = c("two.sided"))
+#### level 2 residuals
+agostino.test(RE_file$ZRE_int, alternative = c("two.sided"))
+anscombe.test(RE_file$ZRE_int, alternative = c("two.sided"))
+
+
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### Run regression for CBCL outcomes ~ PRS + covariates at yr4
 
 ``` {subset data for regression, r}
@@ -8418,7 +8759,7 @@ anova(cbcl_int_M1a_sex,cbcl_int_M2c_sex,test="Chisq") #1a is better
 amadmix_cbcl_int_M1a_sex <- cbcl_int_M1a_sex
 
 ### Sig Results ----
-## income: p = 0.00404  , beta = 0.43547                    
+## cisf: p = 0.00404  , beta = 0.43547                    
 
 ### ext variance explained by model (r^2) ----
 #### 1 - ((residual variance)/(original ext variance)) # 1 - % unexplained variance = % explained
@@ -10317,7 +10658,7 @@ amadmix_ksads_gad_M1b_sex <- ksads_gad_M1b_sex
 orig_Y_var = var(yr4_reg_data$res_k_gad) 
 orig_Y_var
 #### model_variances = as.data.frame(VarCorr(modelnamehere)) to obtain variance estimates
-model_variances = as.data.frame(VarCorr(ksads_gad_M1a_sex)) 
+model_variances = as.data.frame(VarCorr(ksads_gad_M1b_sex)) 
 model_variances
 #### res_var = model_variances[rownumber,'vcov'] to get L1 residual variance; look at model_variances first
 res_var = model_variances[2,'vcov'] 
@@ -10330,11 +10671,11 @@ R2_gad
 ### sr^2 = squared semi-partial correlation
 ### % of variance in Y "uniquely" explained by that predictor (not overlapping with other Xs)
 ### extract residual df 
-res_df <- as.numeric(summary(ksads_gad_M1a_sex)$AICtab[5])
+res_df <- as.numeric(summary(ksads_gad_M1b_sex)$AICtab[5])
 res_df 
 ### extract t-values
-tvals <- data.frame(cbind(row.names(summary(ksads_gad_M1a_sex)$coef), #predictor names
-                          summary(ksads_gad_M1a_sex)$coef[,4]) #t values
+tvals <- data.frame(cbind(row.names(summary(ksads_gad_M1b_sex)$coef), #predictor names
+                          summary(ksads_gad_M1b_sex)$coef[,4]) #t values
               )
 colnames(tvals) <- c("predictor","tval")
 tvals$tval <- as.numeric(tvals$tval)
@@ -10512,7 +10853,7 @@ anova(ksads_mdd_M1a_sex,ksads_mdd_M2b_sex,test="Chisq") #1a is better
 anova(ksads_mdd_M1a_sex,ksads_mdd_M2c_sex,test="Chisq") #1a is better
 anova(ksads_mdd_M1a_sex,ksads_mdd_M2d_sex,test="Chisq") #1a is better
 
-# 2c sex: bic = 2801.4                  
+# 1a sex: bic = 2801.4                  
 # all: choose model 1a sex
 amadmix_ksads_mdd_M1a_sex <- ksads_mdd_M1a_sex
 
@@ -10665,7 +11006,6 @@ summary(ksads_ptsd_M1a_sex)
 ksads_ptsd_M1b_sex <- lmer(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
-                        zcmc_prs* zcmc_prs*
                         zcmc_prs*sex_cmc_cisf +
                       (1|site),
                     data=yr4_reg_data, REML=FALSE)
@@ -10734,7 +11074,7 @@ amadmix_ksads_ptsd_M1b_sex <- ksads_ptsd_M1b_sex
 orig_Y_var = var(yr4_reg_data$res_k_ptsd) 
 orig_Y_var
 #### model_variances = as.data.frame(VarCorr(modelnamehere)) to obtain variance estimates
-model_variances = as.data.frame(VarCorr(ksads_ptsd_M1a_sex)) 
+model_variances = as.data.frame(VarCorr(ksads_ptsd_M1b_sex)) 
 model_variances
 #### res_var = model_variances[rownumber,'vcov'] to get L1 residual variance; look at model_variances first
 res_var = model_variances[2,'vcov'] 
@@ -10747,11 +11087,11 @@ R2_ptsd
 ### sr^2 = squared semi-partial correlation
 ### % of variance in Y "uniquely" explained by that predictor (not overlapping with other Xs)
 ### extract residual df 
-res_df <- as.numeric(summary(ksads_ptsd_M1a_sex)$AICtab[5])
+res_df <- as.numeric(summary(ksads_ptsd_M1b_sex)$AICtab[5])
 res_df 
 ### extract t-values
-tvals <- data.frame(cbind(row.names(summary(ksads_ptsd_M1a_sex)$coef), #predictor names
-                          summary(ksads_ptsd_M1a_sex)$coef[,4]) #t values
+tvals <- data.frame(cbind(row.names(summary(ksads_ptsd_M1b_sex)$coef), #predictor names
+                          summary(ksads_ptsd_M1b_sex)$coef[,4]) #t values
               )
 colnames(tvals) <- c("predictor","tval")
 tvals$tval <- as.numeric(tvals$tval)
@@ -10764,31 +11104,31 @@ sr2vals
 
 # Extract L1 Predicted and Residual Values to Add to Main L1 Dataset ----
 ### predicted values (Yhats)
-yr4_reg_data$ksads_ptsd_M1a_sex_Yhat <- as.numeric(predict(ksads_ptsd_M1a_sex))
+yr4_reg_data$ksads_ptsd_M1b_sex_Yhat <- as.numeric(predict(ksads_ptsd_M1b_sex))
 # create Z score version
-yr4_reg_data$Zksads_ptsd_M1a_sex_Yhat <- as.numeric(scale(yr4_reg_data$ksads_ptsd_M1a_sex_Yhat))
+yr4_reg_data$Zksads_ptsd_M1b_sex_Yhat <- as.numeric(scale(yr4_reg_data$ksads_ptsd_M1b_sex_Yhat))
 ### residual values (the r's, Y - Yhat)
-yr4_reg_data$ksads_ptsd_M1a_sex_L1resid <- as.numeric(resid(ksads_ptsd_M1a_sex))
+yr4_reg_data$ksads_ptsd_M1b_sex_L1resid <- as.numeric(resid(ksads_ptsd_M1b_sex))
 # create Z score version
-yr4_reg_data$Zksads_ptsd_M1a_sex_L1resid <- as.numeric(
-                                                scale(yr4_reg_data$ksads_ptsd_M1a_sex_L1resid))
+yr4_reg_data$Zksads_ptsd_M1b_sex_L1resid <- as.numeric(
+                                                scale(yr4_reg_data$ksads_ptsd_M1b_sex_L1resid))
 
 ## Extract L2 Predicted and Residual Values to Add to Previously Built L2 Aggregate Dataset ----
 ### no L2 predictors so only normality and independence assessed
 ### extract L2 residuals using ranef() function
-intercept <- ranef(ksads_ptsd_M1a_sex)$site["(Intercept)"] #intercept is always as "(Intercept)"
+intercept <- ranef(ksads_ptsd_M1b_sex)$site["(Intercept)"] #intercept is always as "(Intercept)"
 colnames(intercept) = c("RE_int")
 rownames(intercept) <- NULL
 intercept$ZRE_int <- as.numeric(scale(intercept$RE_int), scale = TRUE)
 RE_file <- intercept
-RE_file$site <- row.names(ranef(ksads_ptsd_M1a_sex)$site)
+RE_file$site <- row.names(ranef(ksads_ptsd_M1b_sex)$site)
 
 ## Assumption #1 and 2 Linearity and Heteroskedasticity ----
 ### visually inspect residual-predicted plot for evidence of curvilinearity
 ### level 1 ----
 
-ggplot(aes(x=Zksads_ptsd_M1a_sex_Yhat,
-           y=Zksads_ptsd_M1a_sex_L1resid),data=yr4_reg_data) +
+ggplot(aes(x=Zksads_ptsd_M1b_sex_Yhat,
+           y=Zksads_ptsd_M1b_sex_L1resid),data=yr4_reg_data) +
   geom_point(aes(color=sex)) +
   labs(x="Predicted Values (Z)",y="Residual Values (Z)") +
   geom_smooth(method="lm",color="black") +
@@ -10800,22 +11140,22 @@ ggplot(aes(x=Zksads_ptsd_M1a_sex_Yhat,
 ### iterative algorithm that down-weights outliers and assumes no normality of the data.
 ### general: use rlmer() function from “robustlmm” package, instead of lmer() in lme4 package
 ### note that this function takes a few minutes to estimate, keep your patience hat on /!\ 
-ksads_ptsd_M1a_sex_robustSE <- rlmer(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
+ksads_ptsd_M1b_sex_robustSE <- rlmer(res_k_ptsd ~ zcmc_prs + zcmc_age + zcmc_income +
                               sex_cmc_cisf +
                             (1|site),
                           data=yr4_reg_data, REML=FALSE)
-summary(ksads_ptsd_M1a_sex_robustSE)
-summary(ksads_ptsd_M1a_sex) # for comparison with the robust estimate
+summary(ksads_ptsd_M1b_sex_robustSE)
+summary(ksads_ptsd_M1b_sex) # for comparison with the robust estimate
 ### results substantively the same (what was significant remains sig, what was not is not sig)
 ### so, non-normality present in our data does not alter our conclusions
-amadmix_ksads_ptsd_M1a_sex_robustSE <- ksads_ptsd_M1a_sex_robustSE
+amadmix_ksads_ptsd_M1b_sex_robustSE <- ksads_ptsd_M1b_sex_robustSE
 # similar enough that fan pattern not concerning
 
-data.frame(summary(ksads_ptsd_M1a_sex_robustSE)$coefficients) %>%
+data.frame(summary(ksads_ptsd_M1b_sex_robustSE)$coefficients) %>%
   rename(robust_est = Estimate,
          robust_se = Std..Error,
          robust_tval = t.value) %>%
-  bind_cols(summary(ksads_ptsd_M1a_sex)$coef) %>%
+  bind_cols(summary(ksads_ptsd_M1b_sex)$coef) %>%
   rename(notrobust_est = Estimate,
          notrobust_se = `Std. Error`,
          notrobust_df = `df`,
@@ -10834,15 +11174,15 @@ NOTE: HEAVILY SKEWED
 ## Assumption #2 Normality ----
 ### visually inspect residuals (skew/kurtosis tests can miss multimodality!) ----
 ### check L1 residuals
-hist(yr4_reg_data$Zksads_ptsd_M1a_sex_L1resid)
+hist(yr4_reg_data$Zksads_ptsd_M1b_sex_L1resid)
 
 ### check L2 residuals **from 2L** file
 hist(RE_file$ZRE_int)
 
 ### formal statistical tests of skew and kurtosis
 #### level 1 residuals
-agostino.test(yr4_reg_data$Zksads_ptsd_M1a_sex_L1resid, alternative = c("two.sided"))
-anscombe.test(yr4_reg_data$Zksads_ptsd_M1a_sex_L1resid, alternative = c("two.sided"))
+agostino.test(yr4_reg_data$Zksads_ptsd_M1b_sex_L1resid, alternative = c("two.sided"))
+anscombe.test(yr4_reg_data$Zksads_ptsd_M1b_sex_L1resid, alternative = c("two.sided"))
 #### level 2 residuals
 agostino.test(RE_file$ZRE_int, alternative = c("two.sided"))
 anscombe.test(RE_file$ZRE_int, alternative = c("two.sided"))
