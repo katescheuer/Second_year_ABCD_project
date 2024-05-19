@@ -1,4 +1,4 @@
-To create PRS:
+To create PRS (not PRS-Csx):
 
 1. Open WSL (penguin)
 2. log into the Klone: ssh [NET ID]@klone.hyak.uw.edu
@@ -15,8 +15,8 @@ To create PRS:
  /gscratch/forsyth/packages/plink --bfile /gscratch/forsyth/data/ABCD/Package_1203714_Genetics/genomics_sample03/ABCD_Pathways/subset_trios/renamed_scz_ABCD_imputed --score /gscratch/forsyth/data/ABCD/Package_1203714_Genetics/genomics_sample03/Stress_KS/data/cd  1 2 3 sum --out /gscratch/forsyth/data/ABCD/Package_1203714_Genetics/genomics_sample03/Stress_KS/output/StressPRS_w_MHC
 
 note: need to specify absolute path in output part or cd to directory where want output
-\
- 1. copy files 
+
+ 1. copy files - need to do this from local (with windows powershell)
  scp [origin_file_path] [desination_file_path]
  Anything on Klone, add prefix:
  kscheuer@klone.hyak.uw.edu:
@@ -42,3 +42,10 @@ note: need to specify absolute path in output part or cd to directory where want
  squeue -u kscheuer
  Checking who are using the resources currently
  squeue -A forsyth
+
+
+ alleles have to be capital
+ not allowed to have multiples of same rsid (multiallelic)
+ remove ch 23 (sex ch)
+ sometimes rsid is wrong (same rsid for two diff places in genome)
+ can use above code with chromosome and position (start with chr) but need rsid for prscsx

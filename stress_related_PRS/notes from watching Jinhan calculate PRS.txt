@@ -30,3 +30,4 @@ maybe bc logfc is effect size for allele list alt allele according to paper
 
 **use ones named stress
 
+note: ABCD’s bim/.bed/.fam, the coordinates is hg38. Jinhan said if you use the Chr:position representation for SNP then version would matter but should be okay (no need to worry about version) if use rsid (because remains the same accross hg version)

@@ -1,0 +1,64 @@
+Meeting with Kevin to discuss factor analysis (5/7/2024)
+
+Kevin's specific concerns
+==========================
+- sometimes people use bifactor models without doing the underlying work on defining a construct
+- reflective vs formative models
+    - reflective models say one things causes others
+    - formative models say all these things have some common effect
+    - exposome is a formative model so we're not saying there's only underlying factor *causing* exposure to adverse events, environmental toxins, prenatal exposures etc
+- bifactor models
+    - naturally have a high fitting propensity meaning they fit data better than other comparative factor models
+    - good authors for more info: Steeve Reese (first author of exposome paper Moore was student), Dale Kim, Wes Bonifay
+
+Takeaways
+==========
+- important interpretation note
+    - in a bifactor model, the general factor is specifically forced to be independent of the subfactor
+    - ie the general exposome score is independent of the six subfactors
+    - when put exposome in models, should add general factor and all six subfactors in same model
+    - wrong interpretation: subfactors are sub-parts of general exposome score
+- look into how specifically exposome score was generated, see if can get code from Ran (esp because may need to remove some measures so don't overal with outcomes)
+- maybe talk to Tyler Moore to ask how should think about exposome, what meaning should take away from exposome score
+- look into critiques of bifactor models generally and the use of bifactor models with the p factor
+- for nrsa aim 2, compare exposome vs just cumulative risk score vs income-to-needs
+- important notes on exposome score
+    - does not include income or parent education
+    - does include some things that may overlap with outcomes eg psychosis scores, mania scores, etc
+    
+
+Original notes below
+====================
+Exposome
+- used EFA as dimensional reduction
+- 348 environmental variables -> iterative EFA to get to 96 variables with "minimal redundancy"
+- estimated EFA solution with those 96 variables using iterated target rotation and got six factors as a solution
+- quasi-confirmatory bifactor analysis
+    - quasi because no cross-validation
+    - confirmatory because used to estimate model for score creation rather than to confirm theoretical/empirically-derived model
+    - included only 65 of 96 variables because items with an absolute value of association less than 0.30 were removed
+    - produced general exposome score and exposome score for six orthogonal subfactors
+- see supp methods for: specific steps, paragraph on why bifactor, paragraph on why efa and cfa, etc
+
+
+What should I know if I want to do my own version of this (to include additional parameters, ie did not include income or parental education, want to include items added for year 4)?
+
+
+kevin's specific concerns
+danger: using bifactor models without doing underlying work on what is this construct
+bifactor: high fitting propensity - fits data better than other comparative factor models (steve reese and dale kim, west bonifay)
+reflective models - one things causes others
+formative model - exposome, adi etc, summary score because think they have some common effect
+
+takeaways:
+1. make sure to ask how ran is getting score - get github
+2. nrsa - compare exposome vs cumulative risk score vs income
+3. look into critiques of bifactor models and p factors
+
+
+in a bifactor model the general factor is specifically forced to be 
+independent of the subfactor
+
+
+maybe talk to tyler moore - how should i think about this?
+what meaning should we take from this?
