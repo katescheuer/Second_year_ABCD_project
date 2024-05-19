@@ -1123,61 +1123,152 @@ ggplot(aes(x=ancestry,fill=gender),data=yr4_reg_data) +
   # geom_boxplot(width=0.2,alpha=0.2) +
   geom_bar(position="dodge") +
   theme_classic() 
-# ggplot(aes(y=raw_c_total,x=gender),data=yr4_reg_data) +
-ggplot(aes(y=res_c_total,x=gender),data=yr4_reg_data) +
-  geom_violin(fill="lightblue") +
-  geom_boxplot(width=0.2,alpha=0.2) +
+ggplot(aes(y=raw_c_total,x=gender),data=yr4_reg_data) +
+# ggplot(aes(y=res_c_total,x=gender),data=yr4_reg_data) +
+  geom_violin() +
+  geom_jitter(width = 0.1, alpha = 0.2) +  # Add jittered points with transparency
+  geom_boxplot(width=0.3,alpha=0.2,fill="lightblue") +
+  labs(x="Gender",y="Total Problems") +
+  scale_x_discrete(labels = c("Cis F", "Cis M", "GD")) +
   theme_classic() 
-# ggplot(aes(y=raw_c_ext,x=gender),data=yr4_reg_data) +
-ggplot(aes(y=res_c_ext,x=gender),data=yr4_reg_data) +
-  geom_violin(fill="lightblue") +
-  geom_boxplot(width=0.2,alpha=0.2) +
+ggplot(aes(y=raw_c_ext,x=gender),data=yr4_reg_data) +
+# ggplot(aes(y=res_c_ext,x=gender),data=yr4_reg_data) +
+  geom_violin() +
+  geom_jitter(width = 0.1, alpha = 0.2) +  # Add jittered points with transparency
+  geom_boxplot(width=0.3,alpha=0.2,fill="lightblue") +
+  labs(x="Gender",y="Externalizing Problems") +
+  scale_x_discrete(labels = c("Cis F", "Cis M", "GD")) +
   theme_classic() 
-# ggplot(aes(y=raw_c_int,x=gender),data=yr4_reg_data) +
-ggplot(aes(y=res_c_int,x=gender),data=yr4_reg_data) +
-  geom_violin(fill="lightblue") +
-  geom_boxplot(width=0.2,alpha=0.2) +
+ggplot(aes(y=raw_c_int,x=gender),data=yr4_reg_data) +
+# ggplot(aes(y=res_c_int,x=gender),data=yr4_reg_data) +
+  geom_violin() +
+  geom_jitter(width = 0.1, alpha = 0.2) +  # Add jittered points with transparency
+  geom_boxplot(width=0.3,alpha=0.2,fill="lightblue") +
+  labs(x="Gender",y="Internalizing Problems") +
+  scale_x_discrete(labels = c("Cis F", "Cis M", "GD")) +
   theme_classic() 
-# ggplot(aes(y=raw_c_aggress,x=gender),data=yr4_reg_data) +
-ggplot(aes(y=res_c_aggress,x=gender),data=yr4_reg_data) +
-  geom_violin(fill="lightblue") +
-  geom_boxplot(width=0.2,alpha=0.2) +
-  theme_classic()
-# ggplot(aes(y=raw_c_attn,x=gender),data=yr4_reg_data) +
-ggplot(aes(y=res_c_attn,x=gender),data=yr4_reg_data) +
-  geom_violin(fill="lightblue") +
-  geom_boxplot(width=0.2,alpha=0.2) +
+ggplot(aes(y=raw_c_aggress,x=gender),data=yr4_reg_data) +
+# ggplot(aes(y=res_c_aggress,x=gender),data=yr4_reg_data) +
+  geom_violin() +
+  geom_jitter(width = 0.1, alpha = 0.2) +  # Add jittered points with transparency
+  geom_boxplot(width=0.3,alpha=0.2,fill="lightblue") +
+  labs(x="Gender",y="Aggression Problems") +
+  scale_x_discrete(labels = c("Cis F", "Cis M", "GD")) +
   theme_classic() 
-# ggplot(aes(y=raw_c_anxdep,x=gender),data=yr4_reg_data) +
-ggplot(aes(y=res_c_anxdep,x=gender),data=yr4_reg_data) +
-  geom_violin(fill="lightblue") +
-  geom_boxplot(width=0.2,alpha=0.2) +
+ggplot(aes(y=raw_c_attn,x=gender),data=yr4_reg_data) +
+# ggplot(aes(y=res_c_attn,x=gender),data=yr4_reg_data) +
+  geom_violin() +
+  geom_jitter(width = 0.1, alpha = 0.2) +  # Add jittered points with transparency
+  geom_boxplot(width=0.3,alpha=0.2,fill="lightblue") +
+  labs(x="Gender",y="Attention Problems") +
+  scale_x_discrete(labels = c("Cis F", "Cis M", "GD")) +
   theme_classic() 
-# ggplot(aes(y=raw_c_withdep,x=gender),data=yr4_reg_data) +
-ggplot(aes(y=res_c_withdep,x=gender),data=yr4_reg_data) +
-  geom_violin(fill="lightblue") +
-  geom_boxplot(width=0.2,alpha=0.2) +
-  theme_classic()
-# ggplot(aes(y=raw_c_rule,x=gender),data=yr4_reg_data) +
-ggplot(aes(y=res_c_rule,x=gender),data=yr4_reg_data) +
-  geom_violin(fill="lightblue") +
-  geom_boxplot(width=0.2,alpha=0.2) +
+ggplot(aes(y=raw_c_anxdep,x=gender),data=yr4_reg_data) +
+# ggplot(aes(y=res_c_anxdep,x=gender),data=yr4_reg_data) +
+  geom_violin() +
+  geom_jitter(width = 0.1, alpha = 0.2) +  # Add jittered points with transparency
+  geom_boxplot(width=0.3,alpha=0.2,fill="lightblue") +
+  labs(x="Gender",y="Anxious/Depressed Problems") +
+  scale_x_discrete(labels = c("Cis F", "Cis M", "GD")) +
   theme_classic() 
-# ggplot(aes(y=raw_c_social,x=gender),data=yr4_reg_data) +
-ggplot(aes(y=res_c_social,x=gender),data=yr4_reg_data) +
-  geom_violin(fill="lightblue") +
-  geom_boxplot(width=0.2,alpha=0.2) +
+ggplot(aes(y=raw_c_withdep,x=gender),data=yr4_reg_data) +
+# ggplot(aes(y=res_c_withdep,x=gender),data=yr4_reg_data) +
+  geom_violin() +
+  geom_jitter(width = 0.1, alpha = 0.2) +  # Add jittered points with transparency
+  geom_boxplot(width=0.3,alpha=0.2,fill="lightblue") +
+  labs(x="Gender",y="Withdrawn/Depressed Problems") +
+  scale_x_discrete(labels = c("Cis F", "Cis M", "GD")) +
   theme_classic() 
-# ggplot(aes(y=raw_c_somatic,x=gender),data=yr4_reg_data) +
-ggplot(aes(y=res_c_somatic,x=gender),data=yr4_reg_data) +
-  geom_violin(fill="lightblue") +
-  geom_boxplot(width=0.2,alpha=0.2) +
+ggplot(aes(y=raw_c_rule,x=gender),data=yr4_reg_data) +
+# ggplot(aes(y=res_c_rule,x=gender),data=yr4_reg_data) +
+  geom_violin() +
+  geom_jitter(width = 0.1, alpha = 0.2) +  # Add jittered points with transparency
+  geom_boxplot(width=0.3,alpha=0.2,fill="lightblue") +
+  labs(x="Gender",y="Rule-breaking Problems") +
+  scale_x_discrete(labels = c("Cis F", "Cis M", "GD")) +
   theme_classic() 
-# ggplot(aes(y=raw_c_thought,x=gender),data=yr4_reg_data) +
-ggplot(aes(y=res_c_thought,x=gender),data=yr4_reg_data) +
-  geom_violin(fill="lightblue") +
-  geom_boxplot(width=0.2,alpha=0.2) +
+ggplot(aes(y=raw_c_social,x=gender),data=yr4_reg_data) +
+# ggplot(aes(y=res_c_social,x=gender),data=yr4_reg_data) +
+  geom_violin() +
+  geom_jitter(width = 0.1, alpha = 0.2) +  # Add jittered points with transparency
+  geom_boxplot(width=0.3,alpha=0.2,fill="lightblue") +
+  labs(x="Gender",y="Social Problems") +
+  scale_x_discrete(labels = c("Cis F", "Cis M", "GD")) +
   theme_classic() 
+ggplot(aes(y=raw_c_somatic,x=gender),data=yr4_reg_data) +
+# ggplot(aes(y=res_c_somatic,x=gender),data=yr4_reg_data) +
+  geom_violin() +
+  geom_jitter(width = 0.1, alpha = 0.2) +  # Add jittered points with transparency
+  geom_boxplot(width=0.3,alpha=0.2,fill="lightblue") +
+  labs(x="Gender",y="Somatic Problems") +
+  scale_x_discrete(labels = c("Cis F", "Cis M", "GD")) +
+  theme_classic() 
+ggplot(aes(y=raw_c_thought,x=gender),data=yr4_reg_data) +
+# ggplot(aes(y=res_c_thought,x=gender),data=yr4_reg_data) +
+  geom_violin() +
+  geom_jitter(width = 0.1, alpha = 0.2) +  # Add jittered points with transparency
+  geom_boxplot(width=0.3,alpha=0.2,fill="lightblue") +
+  labs(x="Gender",y="Thought Problems") +
+  scale_x_discrete(labels = c("Cis F", "Cis M", "GD")) +
+  theme_classic() 
+
+test <- yr4_reg_data %>% group_by(gender,raw_k_gad) %>% count()
+test2 <- test %>% group_by(gender) %>%   mutate(prop = n / sum(n))
+ggplot(test2, aes(x = as.factor(raw_k_gad), y = prop, fill = gender)) +
+  geom_bar(stat = "identity", position = "dodge")  +
+  labs(title="Eur Ancestry",
+        x = "GAD",
+       y = "Proportion",
+       fill = "Gender") +
+  scale_y_continuous(expand=c(0,0),limits=c(0,1)) +
+  scale_fill_manual(values = c("purple","green","blue"),
+                    labels = c("Cis F", "Cis M", "GD")) +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+test <- yr4_reg_data %>% group_by(gender,raw_k_mdd) %>% count()
+test2 <- test %>% group_by(gender) %>%   mutate(prop = n / sum(n))
+ggplot(test2, aes(x = as.factor(raw_k_mdd), y = prop, fill = gender)) +
+  geom_bar(stat = "identity", position = "dodge")  +
+  labs(title="Eur Ancestry",
+        x = "MDD",
+       y = "Proportion",
+       fill = "Gender") +
+  scale_y_continuous(expand=c(0,0),limits=c(0,1)) +
+  scale_fill_manual(values = c("purple","green","blue"),
+                    labels = c("Cis F", "Cis M", "GD")) +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+test <- yr4_reg_data %>% group_by(gender,raw_k_ptsd) %>% count()
+test2 <- test %>% group_by(gender) %>%   mutate(prop = n / sum(n))
+ggplot(test2, aes(x = as.factor(raw_k_ptsd), y = prop, fill = gender)) +
+  geom_bar(stat = "identity", position = "dodge")  +
+  labs(title="Eur Ancestry",
+        x = "PTSD",
+       y = "Proportion",
+       fill = "Gender") +
+  scale_y_continuous(expand=c(0,0),limits=c(0,1)) +
+  scale_fill_manual(values = c("purple","green","blue"),
+                    labels = c("Cis F", "Cis M", "GD")) +
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+
+
+
+
+
+ggplot(aes(x=zcmc_prs,fill=as.factor(raw_k_ptsd)),data=yr4_reg_data) +
+  geom_histogram(binwidth=0.5) +
+  # labs(x="PRS (Z Score)",y="Count",title="Am Admix Ancestry",fill="GAD") +
+  geom_vline(xintercept=-1.200471,color="blue") +
+  geom_vline(xintercept=0.03260305,color="black") +
+  # xlim(-7,8) +
+  scale_y_continuous(expand=c(0,0),limits=c(0,60)) +
+  theme_bw() +
+
+
 # ggplot(aes(y=raw_k_adhd,x=gender),data=yr4_reg_data) +
 # ggplot(aes(y=res_k_adhd,x=gender),data=yr4_reg_data) +
 #   geom_boxplot() +
