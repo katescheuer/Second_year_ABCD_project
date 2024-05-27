@@ -14,6 +14,7 @@ stress_snps_withGenes_complete.txt
 *.profile
 *.nosex
 *.nopred
+*.meta
 
 # zip files
 *.zip
