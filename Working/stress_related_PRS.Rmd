@@ -40,6 +40,7 @@ meta <- read.csv("abcd_y_lt.csv",header=T) #site id, interview age
 cbcl <- read.csv("mh_p_cbcl.csv",header=T) # cbcl
 ksads_y <- read.csv("mh_y_ksads_ss.csv",header=T) #youth-reported ksads
 ksads_p <- read.csv("mh_p_ksads_ss.csv",header=T) #parent-reported ksads
+ksads_lifetime <- read.csv("ABCD_Baseline_T1_T2_T3_T4_KSADS_Lifetime_Diagnoses.csv") #lifetime ksads diagnoses
 
 ## federal poverty data from https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines
 poverty_info <- read.csv("federal_poverty_info.csv",header=T)
@@ -565,8 +566,13 @@ abcd_all <- demo %>%
                                  "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
                                  "cbcl_scr_syn_withdep_t")),
                         by=c("src_subject_id","eventname")) %>%
-              # add ksads scores
-              left_join(ksads,by=c("src_subject_id","eventname")) 
+              # add current ksads scores
+              left_join(ksads,by=c("src_subject_id","eventname")) %>%
+              # add lifetime ksads scores
+              left_join(select(ksads_lifetime,
+                               c("src_subject_id","eventname",
+                                 "lifetime_adhd","umbrella_anxiety_disorder",
+                                 "lifetime_mdd","lifetime_ptsd")))
 
 ## group all prs data ####
 prs_all <- prs_all_mhc %>%
@@ -772,7 +778,10 @@ lm_resid_cbcl <- lm_eur_cond_resid_cbcl_long %>%
 
 ## run lin reg for each ksads outcome ####
 
-ksads_outcome_list <- c("adhd","gad","mdd","ptsd")
+# ksads_outcome_list <- c("adhd","gad","mdd","ptsd")
+ksads_outcome_list <- c("lifetime_adhd","umbrella_anxiety_disorder",
+                        "lifetime_mdd","lifetime_ptsd")
+
 
 lm_resid_ksads_list <- list() # initialize a list to store results  
 for (outcome in ksads_outcome_list) {
@@ -934,7 +943,9 @@ yr4_reg_data <- yr4_data %>%
                          "cbcl_scr_syn_thought_t","cbcl_scr_syn_totprob_t",
                          "cbcl_scr_syn_withdep_t",
                          # "adhd", #only 1 afr, 2 amadmix, 6 eur cases so do not analyze
-                         "gad","mdd","ptsd",
+                         # "gad","mdd","ptsd",
+                         "lifetime_adhd","umbrella_anxiety_disorder",
+                         "lifetime_mdd","lifetime_ptsd"
                          )) %>%
                 rename(
                   id = src_subject_id,
@@ -953,9 +964,13 @@ yr4_reg_data <- yr4_data %>%
                   raw_c_total = cbcl_scr_syn_totprob_t,
                   raw_c_withdep = cbcl_scr_syn_withdep_t,
                   # raw_k_adhd = adhd, #only 1 afr, 2 amadmix, 6 eur cases so do not analyze
-                  raw_k_gad = gad,
-                  raw_k_mdd = mdd,
-                  raw_k_ptsd = ptsd
+                  # raw_k_gad = gad,
+                  # raw_k_mdd = mdd,
+                  # raw_k_ptsd = ptsd
+                  raw_k_life_adhd = lifetime_adhd,
+                  raw_k_life_anx = umbrella_anxiety_disorder,
+                  raw_k_life_mdd = lifetime_mdd,
+                  raw_k_life_ptsd = lifetime_ptsd
                 ) %>%
 
                   mutate(gender = case_when(gender == 1 ~ "cism",
@@ -992,9 +1007,13 @@ yr4_reg_data <- yr4_data %>%
                         res_c_total = cbcl_scr_syn_totprob_t,
                         res_c_withdep = cbcl_scr_syn_withdep_t,
                         # res_k_adhd = adhd, #only 1 afr, 2 amadmix, 6 eur cases so do not analyze
-                        res_k_gad = gad,
-                        res_k_mdd = mdd,
-                        res_k_ptsd = ptsd
+                        # res_k_gad = gad,
+                        # res_k_mdd = mdd,
+                        # res_k_ptsd = ptsd
+                        res_k_life_adhd = lifetime_adhd,
+                        res_k_life_anx = umbrella_anxiety_disorder,
+                        res_k_life_mdd = lifetime_mdd,
+                        res_k_life_ptsd = lifetime_ptsd
                 ) %>%
         
 ### dummy code, effect code, and cluster mean center categorical variables ####
@@ -1071,7 +1090,8 @@ yr4_reg_data <- yr4_data %>%
                 filter(!is.na(res_c_total)) %>%
 
                 # remove subjects without ksads data
-                filter(!is.na(res_k_ptsd)) %>%
+                # filter(!is.na(res_k_ptsd)) %>%
+                filter(!is.na(raw_k_life_ptsd)) %>%
 
                 #reorder columns so easier to work with
                 select(id,site,prs,age,income_to_needs,gender,sex,ancestry,
@@ -1087,12 +1107,16 @@ yr4_reg_data <- yr4_data %>%
                        res_c_aggress,res_c_attn,res_c_anxdep,res_c_withdep,
                        res_c_rule,res_c_social,res_c_somatic,res_c_thought,
                        # res_k_adhd, #only 1 afr, 2 amadmix, 6 eur cases so do not analyze
-                       res_k_gad,res_k_mdd,res_k_ptsd,
+                       # res_k_gad,res_k_mdd,res_k_ptsd,
+                       res_k_life_adhd,res_k_life_anx,
+                       res_k_life_mdd,res_k_life_ptsd,
                        raw_c_total,raw_c_ext,raw_c_int,
                        raw_c_aggress,raw_c_attn,raw_c_anxdep,raw_c_withdep,
                        raw_c_rule,raw_c_social,raw_c_somatic,raw_c_thought,
                        # raw_k_adhd, #only 1 afr, 2 amadmix, 6 eur cases so do not analyze
-                       raw_k_gad,raw_k_mdd,raw_k_ptsd
+                       # raw_k_gad,raw_k_mdd,raw_k_ptsd
+                       raw_k_life_adhd,raw_k_life_anx,
+                       raw_k_life_mdd,raw_k_life_ptsd
                        )
 
 # yr4_reg_data$anc_cmc_afr <- as.numeric(center(yr4_reg_data$anc_eff_afr,type="CWC", 
@@ -4280,67 +4304,83 @@ anscombe.test(RE_file$ZRE_int, alternative = c("two.sided"))
 
 ## gad ----
 ### Intercept-Only Model Estimation (for Y) ----
-ksads_gad_M0 <- lmer(res_k_gad ~ 1 + (1|site), data=yr4_reg_data, REML=FALSE)
-summary(ksads_gad_M0)
+# ksads_gad_M0 <- lmer(res_k_gad ~ 1 + (1|site), data=yr4_reg_data, REML=FALSE)
+ksads_anx_M0 <- lmer(res_k_life_anx ~ 1 + (1|site), data=yr4_reg_data, REML=FALSE)
+# summary(ksads_gad_M0)
+summary(ksads_anx_M0)
 
 ### computing the ICC for Y using variance components ----
-variances = as.data.frame(VarCorr(ksads_gad_M0))
+# variances = as.data.frame(VarCorr(ksads_gad_M0))
+variances = as.data.frame(VarCorr(ksads_anx_M0))
 cluster_var = variances[1,'vcov']
 resid_var = variances[2,'vcov']
 ICC_Y2 <- cluster_var/(cluster_var + resid_var)
-ICC_Y2 # <0.01% of the variance in gad diagnoses is explained by site
+# ICC_Y2 # <0.01% of the variance in gad diagnoses is explained by site
+ICC_Y2 # 0.5% of the variance in anxiety diagnoses is explained by site
 
 ### Random Intercept, Fixed Slopes without interactions ----
-ksads_gad_M1a_gender <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+# ksads_gad_M1a_gender <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+ksads_life_anx_M1a_gender <- lmer(res_k_life_anx ~ zcmc_prs + zcmc_age + zcmc_income +
                               gen_cmc_cisf + gen_cmc_gnc +
                             (1|site),
                           data=yr4_reg_data, REML=FALSE)
-summary(ksads_gad_M1a_gender)
-ksads_gad_M1a_sex <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+# summary(ksads_gad_M1a_gender)
+summary(ksads_life_anx_M1a_gender)
+# ksads_gad_M1a_sex <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+ksads_life_anx_M1a_sex <- lmer(res_k_life_anx ~ zcmc_prs + zcmc_age + zcmc_income +
                               sex_cmc_cisf +
                             (1|site),
                           data=yr4_reg_data, REML=FALSE)
-summary(ksads_gad_M1a_sex)
+# summary(ksads_gad_M1a_sex)
+summary(ksads_life_anx_M1a_sex)
 
 ### Random Intercept, Fixed Slopes with interactions ----
-ksads_gad_M1b_gender <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+# ksads_gad_M1b_gender <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+ksads_life_anx_M1b_gender <- lmer(res_k_life_anx ~ zcmc_prs + zcmc_age + zcmc_income +
                         gen_cmc_cisf + gen_cmc_gnc +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
                         zcmc_prs* zcmc_prs*
                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc +
                       (1|site),
                     data=yr4_reg_data, REML=FALSE)
-summary(ksads_gad_M1b_gender)
-ksads_gad_M1b_sex <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+# summary(ksads_gad_M1b_gender)
+summary(ksads_life_anx_M1b_gender)
+# ksads_gad_M1b_sex <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+ksads_life_anx_M1b_sex <- lmer(res_k_life_anx ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
                         zcmc_prs* zcmc_prs*
                         zcmc_prs*sex_cmc_cisf +
                       (1|site),
                     data=yr4_reg_data, REML=FALSE)
-summary(ksads_gad_M1b_sex)
+# summary(ksads_gad_M1b_sex)
+summary(ksads_life_anx_M1b_sex)
 
 ### Random Intercept, random slopes, random effects uncorrelated without interactions ----
-ksads_gad_M2a_gender <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+# ksads_gad_M2a_gender <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+ksads_life_anx_M2a_gender <- lmer(res_k_life_anx ~ zcmc_prs + zcmc_age + zcmc_income +
                         gen_cmc_cisf + gen_cmc_gnc +
                       (1|site)+(0+zcmc_prs|site)+
                       (0+zcmc_income|site)+(0+zcmc_age|site)+
                       (0+gen_cmc_cisf|site)+(0+gen_cmc_gnc|site),
                     data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-summary(ksads_gad_M2a_gender)
-# sex failed to converge with either optimizer
-ksads_gad_M2a_sex <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+# summary(ksads_gad_M2a_gender)
+summary(ksads_life_anx_M2a_gender)
+# ksads_gad_M2a_sex <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+ksads_life_anx_M2a_sex <- lmer(res_k_life_anx ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf +
                       (1|site)+(0+zcmc_prs|site)+
                       (0+zcmc_income|site)+(0+zcmc_age|site)+
                       (0+sex_cmc_cisf|site),
                     data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-summary(ksads_gad_M2a_sex)
+# summary(ksads_gad_M2a_sex)
+summary(ksads_life_anx_M2a_sex)
 
 ### Random Intercept, random slopes, random effects uncorrelated with interactions ----
-ksads_gad_M2b_gender <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+# ksads_gad_M2b_gender <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+ksads_life_anx_M2b_gender <- lmer(res_k_life_anx ~ zcmc_prs + zcmc_age + zcmc_income +
                         gen_cmc_cisf + gen_cmc_gnc +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
                         zcmc_prs*gen_cmc_cisf + zcmc_prs*gen_cmc_gnc + 
@@ -4348,8 +4388,10 @@ ksads_gad_M2b_gender <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
                       (0+zcmc_income|site)+(0+zcmc_age|site)+
                       (0+gen_cmc_cisf|site)+(0+gen_cmc_gnc|site),
                     data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-summary(ksads_gad_M2b_gender)
-ksads_gad_M2b_sex <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+# summary(ksads_gad_M2b_gender)
+summary(ksads_life_anx_M2b_gender)
+# ksads_gad_M2b_sex <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+ksads_life_anx_M2b_sex <- lmer(res_k_life_anx ~ zcmc_prs + zcmc_age + zcmc_income +
                         sex_cmc_cisf +
                         zcmc_prs*zcmc_age + zcmc_prs*zcmc_income +
                         zcmc_prs*sex_cmc_cisf + 
@@ -4357,24 +4399,30 @@ ksads_gad_M2b_sex <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
                       (0+zcmc_income|site)+(0+zcmc_age|site)+
                       (0+sex_cmc_cisf|site),
                     data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-summary(ksads_gad_M2b_sex)
+# summary(ksads_gad_M2b_sex)
+summary(ksads_life_anx_M2b_sex)
 
 ### Random Intercept, random slopes, random effects free to correlate without interactions ----
 # gender failed to converge with either optimizer
 # ksads_gad_M2c_gender <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+# ksads_life_anx_M2c_gender <- lmer(res_k_life_anx ~ zcmc_prs + zcmc_age + zcmc_income +
 #                         gen_cmc_cisf + gen_cmc_gnc +
 #                       (1+zcmc_prs+zcmc_income+zcmc_age+
 #                         gen_cmc_cisf + gen_cmc_gnc |site),
+                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
+                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
+# summary(ksads_gad_M2c_gender)
+# summary(ksads_life_anx_M2c_gender)
+# sex failed to converge with either optimizer
+# ksads_gad_M2c_sex <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
+# ksads_life_anx_M2c_sex <- lmer(res_k_life_anx ~ zcmc_prs + zcmc_age + zcmc_income +
+#                         sex_cmc_cisf +
+#                       (1+zcmc_prs+zcmc_income+zcmc_age+
+#                         sex_cmc_cisf |site),
 #                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
 #                     # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-# summary(ksads_gad_M2c_gender)
-ksads_gad_M2c_sex <- lmer(res_k_gad ~ zcmc_prs + zcmc_age + zcmc_income +
-                        sex_cmc_cisf +
-                      (1+zcmc_prs+zcmc_income+zcmc_age+
-                        sex_cmc_cisf |site),
-                    data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="bobyqa"))
-                    # data=yr4_reg_data, REML=FALSE,control=lmerControl(optimizer="Nelder_Mead"))
-summary(ksads_gad_M2c_sex)
+# # summary(ksads_gad_M2c_sex)
+# summary(ksads_life_anx_M2c_sex)
 
 ### Random Intercept, random slopes, random effects free to correlate with interactions ----
 # gender failed to converge with either optimizer
