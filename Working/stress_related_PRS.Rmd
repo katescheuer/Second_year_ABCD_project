@@ -118,12 +118,18 @@ abcd_all <- demo %>%
               # only 12 subjects are intersex which is too small to analyze
               # so set to NA
               mutate(sex = if_else(sex==3,NA,sex)) %>%
+              # make sex factor
+              mutate(sex = as.factor(sex)) %>%
               # combine items for gender from baseline to yr 2 and yr 3+
               mutate(gender = case_when(!is.na(demo_gender_id_v2) ~ demo_gender_id_v2,
                                         !is.na(demo_gender_id_v2_l) ~ demo_gender_id_v2_l
                                   )) %>%
               # for gender replace 777 and 999 with NA
               mutate(gender = ifelse(gender %in% c(777,999) , NA, gender)) %>%
+              # for gender combine 3 (trans male), 4 (trans female), 5 (genderqueer), and 6 (other) into one gender diverse group
+              mutate(gender = if_else(c(gender==3|gender==4|gender==5|gender==6),3,gender)) %>%
+              # make gender factor
+              mutate(gender = as.factor(gender)) %>%
               # add income to needs ratio
               left_join(income_df,by=c("src_subject_id","eventname")) %>%
               # add site and interview age
@@ -218,18 +224,36 @@ data_all <- abcd_all %>%
                        cbcl_thought,cbcl_withdep,
                        adhd,anxiety,mdd,ptsd,
                        V1,V2,V3,V4,V5,V6,V7,V8
-                       ))
+                       )) %>%
+              #remove rows with NA in any column
+              drop_na()
 
-### dummy code categorical variables
+### dummy coding, effect coding, cluster mean centering
 data_all <- data_all %>%
             #dummy coding
-            mutate(sex_dum_cisf = case_when(sex == 1 ~ 0,
-                                            sex == 2 ~ 1)) %>%
+            mutate(sex_dum_f = case_when(sex == 1 ~ 0, #male as ref category
+                                         sex == 2 ~ 1)) %>% #female
+            mutate(gender_dum_cisf = case_when(gender == 1 ~ 0, #cis male as ref category
+                                               gender == 2 ~ 1, #cis female
+                                               gender == 3 ~ 0)) %>% # gender diverse
+            mutate(gender_dum_gd = case_when(gender == 1 ~ 0, #cis male as ref category
+                                             gender == 2 ~ 0, #cis female
+                                             gender == 3 ~ 1)) %>% # gender diverse
             #effect coding - different betas but same pvals
-            mutate(sex_eff_cisf = case_when(sex == 1 ~ -1, 
-                                            sex == 2 ~ 1)) %>%
+            mutate(sex_eff_cisf = case_when(sex == 1 ~ -1, #male
+                                            sex == 2 ~ 1)) %>% #female
+            mutate(gender_eff_cisf = case_when(gender == 1 ~ -1, #cis male
+                                               gender == 2 ~ 1, #cis female
+                                               gender == 3 ~ 0)) %>% # gender diverse
+            mutate(gender_eff_gd = case_when(gender == 1 ~ -1, #cis male 
+                                             gender == 2 ~ 0, #cis female
+                                             gender == 3 ~ 1)) %>% # gender diverse
             #cluster mean centering - slightly different betas and pvals
             mutate(sex_cmc_cisf = as.numeric(center(sex_eff_cisf, 
+                             type="CWC", cluster = site))) %>%
+            mutate(gender_cmc_cisf = as.numeric(center(gender_eff_cisf, 
+                             type="CWC", cluster = site))) %>%
+            mutate(gender_cmc_gd = as.numeric(center(gender_eff_gd, 
                              type="CWC", cluster = site))) %>%
             mutate(Zprs_stress_cmc = as.numeric(center(Zprs_stress,type="CWC",cluster=site))) %>%
             mutate(Zprs_mdd_cmc = as.numeric(center(Zprs_mdd,type="CWC",cluster=site))) %>%
@@ -333,77 +357,88 @@ dimnames(amadmix_site_covmat) <- dimnames(amadmix_grm_sparse_subsetted)
 
 lm_eur_stressprs_total <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_total", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_stressprs_ext <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_ext", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_stressprs_int <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_int", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_stressprs_agg <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_agg", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_stressprs_attn <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_attn", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_stressprs_anxdep <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_anxdep", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_stressprs_rule <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_rule", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_stressprs_social <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_social", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_stressprs_somatic <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_somatic", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_stressprs_thought <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_thought", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_stressprs_withdep <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_withdep", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
@@ -411,28 +446,32 @@ lm_eur_stressprs_withdep <- fitNullModel(eur_yr4_data_reordered,
 
 lm_eur_stressprs_adhd <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "adhd", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_eur_stressprs_anxiety <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "anxiety", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_eur_stressprs_mdd <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "mdd", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_eur_stressprs_ptsd <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "ptsd", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_stress_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "binomial",
@@ -450,10 +489,99 @@ round(lm_eur_stressprs_social$fixef,10)
 round(lm_eur_stressprs_somatic$fixef,10)
 round(lm_eur_stressprs_thought$fixef,10)
 round(lm_eur_stressprs_withdep$fixef,10)
-round(lm_eur_stressprs_adhd$fixef,10)
-round(lm_eur_stressprs_anxiety$fixef,10)
-round(lm_eur_stressprs_mdd$fixef,10)
-round(lm_eur_stressprs_ptsd$fixef,10)
+round(lm_eur_stressprs_adhd$fixef,10) #98 cases (66 male, 32 female or 67 cis male, 24 cis female, 5 gender diverse), 2201 controls
+round(lm_eur_stressprs_anxiety$fixef,10) #387 cases (146 male, 241 female or 148 cis male, 203 cis female, 36 gender diverse), 1912 controls
+round(lm_eur_stressprs_mdd$fixef,10) #249 cases (80 male, 169 female or 79 cis male, 147 cis female, 33 gender diverse), 2050 controls
+round(lm_eur_stressprs_ptsd$fixef,10) #56 cases (23 male, 33 female or 22 cis male, 28 cis female, 6 gender diverse), 2243 controls
+
+### AIC for sex vs gender ####
+# sex: 1226 male vs 1073 female
+# gender: 1217 cis male vs 1012 cis female vs 70 gender diverse
+#total: 17392.1 vs 17352.28 - choose gender
+#ext: 16580.36 vs 16561.91 - choose gender
+#int: 17234.33 vs 17205.02 - choose gender
+#agg: 13049.22 vs 13039.58 - choose gender
+#attn: 14372.35 vs 14331.75 - choose gender
+#anxdep: 14679.36 vs 14658.46 - choose gender
+#rule: 12414.87 vs 12401.4 - choose gender
+#social: 13463.93 vs 13457.95 - choose gender
+#somatic: 14493.42 vs 14472.28 - choose gender
+#thought: 14596.28 vs 14521.77 - choose gender
+#withdep: 14844.43 vs 14800.39 - choose gender
+#adhd: 12974.91 vs 13143.02 - choose sex
+#anxiety: 11112.35 vs 11138.76 - choose sex
+#mdd: 12095.32 vs 12205.17 - choose sex
+#ptsd: 13791.07 vs 13772.39 - choose gender
+
+lm_eur_stressprs_total$AIC
+lm_eur_stressprs_ext$AIC
+lm_eur_stressprs_int$AIC
+lm_eur_stressprs_agg$AIC
+lm_eur_stressprs_attn$AIC
+lm_eur_stressprs_anxdep$AIC
+lm_eur_stressprs_rule$AIC
+lm_eur_stressprs_social$AIC
+lm_eur_stressprs_somatic$AIC
+lm_eur_stressprs_thought$AIC
+lm_eur_stressprs_withdep$AIC
+lm_eur_stressprs_adhd$AIC
+lm_eur_stressprs_anxiety$AIC
+lm_eur_stressprs_mdd$AIC
+lm_eur_stressprs_ptsd$AIC
+
+### Results ####
+#total: no sig
+#ext: no sig
+#int: sex: beta = 0.999, se = 0.225, p = 0.00000905
+#agg: sex: beta = -0.258, se = 0.091, p = 0.004
+#attn: no sig
+#anxdep: sex: beta = 0.487, se = 0.128, p = 0.000145
+#rule: no sig
+#social: no sig
+#***somatic: prs: beta = 0.281, se = 0.122, p = 0.022; sex: beta = 0.396, se = 0.123, p = 0.00123
+#thought: sex: beta = 0.269, se = 0.128, p = 0.035
+#withdep: no sig
+#adhd: sex: beta = -0.329, se = 0.113, p = 0.004
+#anxiety: sex: beta = 0.394, se = 0.059, p = < 0.0000000001; age: beta = 0.369, se = 0.132, p = 0.005
+#mdd: sex: beta = 0.490, se = 0.073, p < 0.0000000001
+#ptsd: no sig
+
+
+### adjusted p-values for PRS only
+p.adjust(c(lm_eur_stressprs_total$fixef$pval[2], #not sig
+           lm_eur_stressprs_ext$fixef$pval[2], #not sig
+           lm_eur_stressprs_int$fixef$pval[2], #not sig
+           lm_eur_stressprs_agg$fixef$pval[2], #not sig
+           lm_eur_stressprs_attn$fixef$pval[2], #not sig
+           lm_eur_stressprs_anxdep$fixef$pval[2], #not sig
+           lm_eur_stressprs_rule$fixef$pval[2], #not sig
+           lm_eur_stressprs_social$fixef$pval[2], #not sig
+           lm_eur_stressprs_somatic$fixef$pval[2], #not sig
+           lm_eur_stressprs_thought$fixef$pval[2], #not sig
+           lm_eur_stressprs_withdep$fixef$pval[2], #not sig
+           lm_eur_stressprs_adhd$fixef$pval[2], #not sig
+           lm_eur_stressprs_anxiety$fixef$pval[2], #not sig
+           lm_eur_stressprs_mdd$fixef$pval[2], #not sig
+           lm_eur_stressprs_ptsd$fixef$pval[2]), #not sig
+           method="fdr")
+
+### adjusted p-values for sex only
+p.adjust(c(lm_eur_stressprs_total$fixef$pval[3], #not sig
+           lm_eur_stressprs_ext$fixef$pval[3], #not sig
+           lm_eur_stressprs_int$fixef$pval[3], #***sig
+           lm_eur_stressprs_agg$fixef$pval[3], #***sig
+           lm_eur_stressprs_attn$fixef$pval[3], #not sig
+           lm_eur_stressprs_anxdep$fixef$pval[3], #***sig
+           lm_eur_stressprs_rule$fixef$pval[3], #not sig
+           lm_eur_stressprs_social$fixef$pval[3], #not sig
+           lm_eur_stressprs_somatic$fixef$pval[3], #***sig
+           lm_eur_stressprs_thought$fixef$pval[3], #not sig
+           lm_eur_stressprs_withdep$fixef$pval[3], #not sig
+           lm_eur_stressprs_adhd$fixef$pval[3], #***sig
+           lm_eur_stressprs_anxiety$fixef$pval[3], #***sig
+           lm_eur_stressprs_mdd$fixef$pval[3], #***sig
+           lm_eur_stressprs_ptsd$fixef$pval[3]), #not sig
+           method="fdr")
 
 ```
 
@@ -464,77 +592,88 @@ round(lm_eur_stressprs_ptsd$fixef,10)
 
 lm_eur_mddprs_total <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_total", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_mddprs_ext <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_ext", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_mddprs_int <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_int", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_mddprs_agg <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_agg", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_mddprs_attn <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_attn", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_mddprs_anxdep <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_anxdep", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_mddprs_rule <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_rule", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_mddprs_social <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_social", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_mddprs_somatic <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_somatic", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_mddprs_thought <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_thought", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_eur_mddprs_withdep <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "cbcl_withdep", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "gaussian",
@@ -542,28 +681,32 @@ lm_eur_mddprs_withdep <- fitNullModel(eur_yr4_data_reordered,
 
 lm_eur_mddprs_adhd <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "adhd", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_eur_mddprs_anxiety <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "anxiety", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_eur_mddprs_mdd <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "mdd", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_eur_mddprs_ptsd <- fitNullModel(eur_yr4_data_reordered, 
                                   outcome = "ptsd", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+                                  # covars = c("Zprs_mdd_cmc", "gender_eff_cisf", "gender_eff_gd","age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = eur_grm_sparse_subsetted,
                                                  site = eur_site_covmat),
                                   family = "binomial",
@@ -581,10 +724,64 @@ round(lm_eur_mddprs_social$fixef,10)
 round(lm_eur_mddprs_somatic$fixef,10)
 round(lm_eur_mddprs_thought$fixef,10)
 round(lm_eur_mddprs_withdep$fixef,10)
-round(lm_eur_mddprs_adhd$fixef,10)
-round(lm_eur_mddprs_anxiety$fixef,10)
-round(lm_eur_mddprs_mdd$fixef,10)
-round(lm_eur_mddprs_ptsd$fixef,10)
+round(lm_eur_mddprs_adhd$fixef,10) #98 cases (66 male, 32 female or 67 cis male, 24 cis female, 5 gender diverse), 2201 controls
+round(lm_eur_mddprs_anxiety$fixef,10) #387 cases (146 male, 241 female or 148 cis male, 203 cis female, 36 gender diverse), 1912 controls
+round(lm_eur_mddprs_mdd$fixef,10) #249 cases (80 male, 169 female or 79 cis male, 147 cis female, 33 gender diverse), 2050 controls
+round(lm_eur_mddprs_ptsd$fixef,10) #56 cases (23 male, 33 female or 22 cis male, 28 cis female, 6 gender diverse), 2243 controls
+
+### AIC for sex vs gender ####
+# sex: 1226 male vs 1073 female
+# gender: 1217 cis male vs 1012 cis female vs 70 gender diverse
+#total: 17370.49 vs 17331.33 - choose gender
+#ext: 16564.43 vs 16546.28 - choose gender
+#int: 17221.7 vs 17193.15 - choose gender
+#agg: 13041.36 vs 13031.91 - choose gender
+#attn:  14353.46 vs 14313.37 - choose gender
+#anxdep: 14672.26 vs 14651.92 - choose gender
+#rule: 12403.43 vs 12390.41 - choose gender
+#social: 13458.83 vs  13453.14 - choose gender
+#somatic: 14492.06 vs 14471.7 - choose gender
+#thought: 14581.78 vs 14508.42 - choose gender
+#withdep: 14832.19 vs 14788.71 - choose gender
+#adhd: 12974.78 vs 13142.05 - choose sex
+#anxiety: 11106.98 vs 11128.28 - choose sex
+#mdd: 12138.38 vs 12215.82 - choose gender
+#ptsd: 13702.05 vs 13717.91 - choose sex
+
+lm_eur_mddprs_total$AIC
+lm_eur_mddprs_ext$AIC
+lm_eur_mddprs_int$AIC
+lm_eur_mddprs_agg$AIC
+lm_eur_mddprs_attn$AIC
+lm_eur_mddprs_anxdep$AIC
+lm_eur_mddprs_rule$AIC
+lm_eur_mddprs_social$AIC
+lm_eur_mddprs_somatic$AIC
+lm_eur_mddprs_thought$AIC
+lm_eur_mddprs_withdep$AIC
+lm_eur_mddprs_adhd$AIC
+lm_eur_mddprs_anxiety$AIC
+lm_eur_mddprs_mdd$AIC
+lm_eur_mddprs_ptsd$AIC
+
+### Results ####
+#***total: prs: beta = 1.108, se = 0.238, p = 0.00000320; sex: beta = 0.462, se = 0.234, p = 0.048
+#***ext: prs: beta = 0.794, se = 0.198, p = 0.0000624
+#***int: prs: beta = 0.836, se = 0.228, p = 0.000242; sex: beta = 1.019, se = 0.224, p = 0.00000566
+#***agg: prs: beta = 0.257, se = 0.092, p = 0.00503; sex: beta = -0.252, se = 0.090, p = 0.00534
+#***attn: prs: beta = 0.531, se = 0.122, p = 0.0000130
+#***anxdep: prs: beta = 0.372, se = 0.130, p = 0.00410; sex: beta = 0.497, se = 0.128, p = 0.000104
+#***rule: prs: beta = 0.280, se = 0.081, p = 0.000550
+#***social: prs: beta = 0.255, se = 0.100, p = 0.011
+#***somatic: prs: beta = 0.320, se = 0.124, p = 0.010; sex: beta = 0.406, se = 0.123, p = 0.000930
+#***thought: prs: beta = 0.542, se = 0.129, p = 0.0000268; sex: beta = 0.282, se = 0.127, p = 0.027
+#***withdep: prs: beta = 0.476, se = 0.135, p = 0.000441
+#adhd: sex: beta = -0.329, se = 0.113, p = 0.00360
+#***anxiety: prs: beta = 0.174, se = 0.059, p = 0.00296; sex: beta = 0.399, se = 0.059, p < 0.0000000001; age: beta = 0.359, se = 0.132, p = 0.00637
+#***mdd: prs: beta = 0.211, se = 0.070, p = 0.00274; sex: beta = 0.496, se = 0.073, p < 0.0000000001
+#ptsd: no sig
+
+
 
 ```
 
@@ -595,77 +792,77 @@ round(lm_eur_mddprs_ptsd$fixef,10)
 
 lm_afr_stressprs_total <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_total", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_stressprs_ext <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_ext", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_stressprs_int <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_int", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_stressprs_agg <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_agg", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_stressprs_attn <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_attn", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_stressprs_anxdep <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_anxdep", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_stressprs_rule <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_rule", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_stressprs_social <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_social", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_stressprs_somatic <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_somatic", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_stressprs_thought <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_thought", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_stressprs_withdep <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_withdep", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
@@ -673,28 +870,28 @@ lm_afr_stressprs_withdep <- fitNullModel(afr_yr4_data_reordered,
 
 lm_afr_stressprs_adhd <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "adhd", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_afr_stressprs_anxiety <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "anxiety", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_afr_stressprs_mdd <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "mdd", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_afr_stressprs_ptsd <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "ptsd", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "binomial",
@@ -712,10 +909,49 @@ round(lm_afr_stressprs_social$fixef,10)
 round(lm_afr_stressprs_somatic$fixef,10)
 round(lm_afr_stressprs_thought$fixef,10)
 round(lm_afr_stressprs_withdep$fixef,10)
-round(lm_afr_stressprs_adhd$fixef,10)
-round(lm_afr_stressprs_anxiety$fixef,10)
-round(lm_afr_stressprs_mdd$fixef,10)
-round(lm_afr_stressprs_ptsd$fixef,10)
+round(lm_afr_stressprs_adhd$fixef,10) #18 cases, 499 controls
+round(lm_afr_stressprs_anxiety$fixef,10) #46 cases, 471 controls
+round(lm_afr_stressprs_mdd$fixef,10) #53 cases, 464 controls
+round(lm_afr_stressprs_ptsd$fixef,10) #10 cases, 507 controls
+
+### AIC for sex vs gender
+# sex: 249 male vs 268 female
+# gender: 250 cis male vs 264 cis female vs 3 gender diverse (not enough to use)
+
+### Results
+#total: no sig
+#ext: no sig
+#int: no sig
+#agg: no sig
+#attn: no sig
+#anxdep: no sig
+#rule: no sig
+#social: no sig
+#somatic: no sig
+#thought: no sig
+#withdep: no sig
+#adhd: no sig
+#anxiety: no sig
+#mdd: sex: beta = 0.368, se = 0.164, p = 0.025
+#ptsd: no sig
+
+### adjusted p-values for sex only
+p.adjust(c(lm_afr_stressprs_total$fixef$pval[3], #not sig
+           lm_afr_stressprs_ext$fixef$pval[3], #not sig
+           lm_afr_stressprs_int$fixef$pval[3], #not sig
+           lm_afr_stressprs_agg$fixef$pval[3], #not sig
+           lm_afr_stressprs_attn$fixef$pval[3], #not sig
+           lm_afr_stressprs_anxdep$fixef$pval[3], #not sig
+           lm_afr_stressprs_rule$fixef$pval[3], #not sig
+           lm_afr_stressprs_social$fixef$pval[3], #not sig
+           lm_afr_stressprs_somatic$fixef$pval[3], #not sig
+           lm_afr_stressprs_thought$fixef$pval[3], #not sig
+           lm_afr_stressprs_withdep$fixef$pval[3], #not sig
+           lm_afr_stressprs_adhd$fixef$pval[3], #not sig
+           lm_afr_stressprs_anxiety$fixef$pval[3], #not sig
+           lm_afr_stressprs_mdd$fixef$pval[3], #not sig
+           lm_afr_stressprs_ptsd$fixef$pval[3]), #not sig
+           method="fdr")
 
 ```
 
@@ -726,77 +962,77 @@ round(lm_afr_stressprs_ptsd$fixef,10)
 
 lm_afr_mddprs_total <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_total", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_mddprs_ext <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_ext", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_mddprs_int <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_int", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_mddprs_agg <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_agg", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_mddprs_attn <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_attn", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_mddprs_anxdep <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_anxdep", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_mddprs_rule <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_rule", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_mddprs_social <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_social", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_mddprs_somatic <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_somatic", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_mddprs_thought <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_thought", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_afr_mddprs_withdep <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "cbcl_withdep", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "gaussian",
@@ -804,28 +1040,28 @@ lm_afr_mddprs_withdep <- fitNullModel(afr_yr4_data_reordered,
 
 lm_afr_mddprs_adhd <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "adhd", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_afr_mddprs_anxiety <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "anxiety", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_afr_mddprs_mdd <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "mdd", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_afr_mddprs_ptsd <- fitNullModel(afr_yr4_data_reordered, 
                                   outcome = "ptsd", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = afr_grm_sparse_subsetted,
                                                  site = afr_site_covmat),
                                   family = "binomial",
@@ -843,10 +1079,33 @@ round(lm_afr_mddprs_social$fixef,10)
 round(lm_afr_mddprs_somatic$fixef,10)
 round(lm_afr_mddprs_thought$fixef,10)
 round(lm_afr_mddprs_withdep$fixef,10)
-round(lm_afr_mddprs_adhd$fixef,10)
-round(lm_afr_mddprs_anxiety$fixef,10)
-round(lm_afr_mddprs_mdd$fixef,10)
-round(lm_afr_mddprs_ptsd$fixef,10)
+round(lm_afr_mddprs_adhd$fixef,10) #18 cases, 499 controls
+round(lm_afr_mddprs_anxiety$fixef,10) #46 cases, 471 controls
+round(lm_afr_mddprs_mdd$fixef,10) #53 cases, 464 controls
+round(lm_afr_mddprs_ptsd$fixef,10) #10 cases, 507 controls
+
+### AIC for sex vs gender
+# sex: 249 male vs 268 female
+# gender: 250 cis male vs 264 cis female vs 3 gender diverse (not enough to use)
+
+### Results
+#total: no sig
+#ext: no sig
+#int: no sig
+#agg: no sig
+#attn: no sig
+#anxdep: no sig
+#rule: no sig
+#social: no sig
+#somatic: no sig
+#thought: no sig
+#withdep: no sig
+#adhd: no sig
+#anxiety: no sig
+#mdd: sex: beta = 0.371, se = 0.164, p = 0.024
+#ptsd: no sig
+
+
 
 ```
 
@@ -857,77 +1116,77 @@ round(lm_afr_mddprs_ptsd$fixef,10)
 
 lm_amadmix_stressprs_total <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_total", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_stressprs_ext <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_ext", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_stressprs_int <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_int", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_stressprs_agg <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_agg", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_stressprs_attn <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_attn", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_stressprs_anxdep <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_anxdep", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_stressprs_rule <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_rule", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_stressprs_social <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_social", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_stressprs_somatic <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_somatic", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_stressprs_thought <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_thought", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_stressprs_withdep <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_withdep", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
@@ -935,28 +1194,28 @@ lm_amadmix_stressprs_withdep <- fitNullModel(amadmix_yr4_data_reordered,
 
 lm_amadmix_stressprs_adhd <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "adhd", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_amadmix_stressprs_anxiety <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "anxiety", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_amadmix_stressprs_mdd <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "mdd", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_amadmix_stressprs_ptsd <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "ptsd", 
-                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_stress_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "binomial",
@@ -974,10 +1233,86 @@ round(lm_amadmix_stressprs_social$fixef,10)
 round(lm_amadmix_stressprs_somatic$fixef,10)
 round(lm_amadmix_stressprs_thought$fixef,10)
 round(lm_amadmix_stressprs_withdep$fixef,10)
-round(lm_amadmix_stressprs_adhd$fixef,10)
-round(lm_amadmix_stressprs_anxiety$fixef,10)
-round(lm_amadmix_stressprs_mdd$fixef,10)
-round(lm_amadmix_stressprs_ptsd$fixef,10)
+round(lm_amadmix_stressprs_adhd$fixef,10) #14 cases, 477 controls
+round(lm_amadmix_stressprs_anxiety$fixef,10) #56 cases, 435 controls
+round(lm_amadmix_stressprs_mdd$fixef,10) #50 cases, 441 controls
+round(lm_amadmix_stressprs_ptsd$fixef,10) #11 cases, 480 controls
+
+### AIC for sex vs gender
+# sex: 279 male vs 212 female
+# gender: 282 cis male vs 204 cis female vs 5 gender diverse (not enough to use)
+
+### Results
+#***total: prs: beta = -1.309, se = 0.577, p = 0.023
+#ext: no sig
+#int: sex: beta = 1.120, se = 0.497, p = 0.024
+#agg: no sig
+#attn: no sig
+#anxdep: sex: beta = 0.538, se = 0.251, p = 0.032
+#rule: no sig
+#social: no sig
+#somatic: sex: beta = 0.633, se = 0.268, p = 0.018
+#thought: no sig
+#***withdep: prs: beta = -0.670, se = 0.302, p = 0.026
+#adhd: sex: beta = -0.813, se = 0.407, p = 0.046
+#anxiety: sex: beta = 0.509, se = 0.161, p = 0.00151
+#mdd: sex: beta = 0.560, se = 0.168, p = 0.000869; age: beta = 0.991, se = 0.363, p = 0.00630
+#ptsd: no sig
+
+### adjusted p-values for prs only
+p.adjust(c(lm_amadmix_stressprs_total$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_ext$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_int$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_agg$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_attn$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_anxdep$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_rule$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_social$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_somatic$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_thought$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_withdep$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_adhd$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_anxiety$fixef$pval[2], #***sig
+           lm_amadmix_stressprs_mdd$fixef$pval[2], #***sig
+           lm_amadmix_stressprs_ptsd$fixef$pval[2]), #not sig
+           method="fdr")
+
+### adjusted p-values for sex only
+p.adjust(c(lm_amadmix_stressprs_total$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_ext$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_int$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_agg$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_attn$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_anxdep$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_rule$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_social$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_somatic$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_thought$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_withdep$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_adhd$fixef$pval[3], #not sig
+           lm_amadmix_stressprs_anxiety$fixef$pval[3], #***sig
+           lm_amadmix_stressprs_mdd$fixef$pval[3], #***sig
+           lm_amadmix_stressprs_ptsd$fixef$pval[3]), #not sig
+           method="fdr")
+
+
+### adjusted p-values for age only
+p.adjust(c(lm_amadmix_stressprs_total$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_ext$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_int$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_agg$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_attn$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_anxdep$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_rule$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_social$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_somatic$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_thought$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_withdep$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_adhd$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_anxiety$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_mdd$fixef$pval[4], #not sig
+           lm_amadmix_stressprs_ptsd$fixef$pval[4]), #not sig
+           method="fdr")
 
 ```
 
@@ -988,77 +1323,77 @@ round(lm_amadmix_stressprs_ptsd$fixef,10)
 
 lm_amadmix_mddprs_total <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_total", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_mddprs_ext <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_ext", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_mddprs_int <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_int", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_mddprs_agg <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_agg", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_mddprs_attn <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_attn", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_mddprs_anxdep <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_anxdep", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_mddprs_rule <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_rule", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_mddprs_social <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_social", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_mddprs_somatic <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_somatic", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_mddprs_thought <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_thought", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
                                   verbose = TRUE)
 lm_amadmix_mddprs_withdep <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "cbcl_withdep", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "gaussian",
@@ -1066,32 +1401,32 @@ lm_amadmix_mddprs_withdep <- fitNullModel(amadmix_yr4_data_reordered,
 
 lm_amadmix_mddprs_adhd <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "adhd", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
 lm_amadmix_mddprs_anxiety <- fitNullModel(amadmix_yr4_data_reordered, 
                                   outcome = "anxiety", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
+                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
                                                  site = amadmix_site_covmat),
                                   family = "binomial",
                                   verbose = TRUE)
-lm_amadmix_mddprs_mdd <- fitNullModel(amadmix_yr4_data_reordered, 
-                                  outcome = "mdd", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
-                                  cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
-                                                 site = amadmix_site_covmat),
-                                  family = "binomial",
-                                  verbose = TRUE)
-lm_amadmix_mddprs_ptsd <- fitNullModel(amadmix_yr4_data_reordered, 
-                                  outcome = "ptsd", 
-                                  covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)), 
-                                  cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
-                                                 site = amadmix_site_covmat),
-                                  family = "binomial",
-                                  verbose = TRUE)
+# lm_amadmix_mddprs_mdd <- fitNullModel(amadmix_yr4_data_reordered, #did not converge
+#                                   outcome = "mdd", 
+#                                   covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+#                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
+#                                                  site = amadmix_site_covmat),
+#                                   family = "binomial",
+#                                   verbose = TRUE)
+# lm_amadmix_mddprs_ptsd <- fitNullModel(amadmix_yr4_data_reordered, #did not converge
+#                                   outcome = "ptsd", 
+#                                   covars = c("Zprs_mdd_cmc", "sex_cmc_cisf", "age_zcmc", paste0("V", 1:8)),
+#                                   cov.mat = list(kinship = amadmix_grm_sparse_subsetted,
+#                                                  site = amadmix_site_covmat),
+#                                   family = "binomial",
+#                                   verbose = TRUE)
 
 ### see fixed effect results
 round(lm_amadmix_mddprs_total$fixef,10)
@@ -1105,10 +1440,33 @@ round(lm_amadmix_mddprs_social$fixef,10)
 round(lm_amadmix_mddprs_somatic$fixef,10)
 round(lm_amadmix_mddprs_thought$fixef,10)
 round(lm_amadmix_mddprs_withdep$fixef,10)
-round(lm_amadmix_mddprs_adhd$fixef,10)
-round(lm_amadmix_mddprs_anxiety$fixef,10)
-round(lm_amadmix_mddprs_mdd$fixef,10)
-round(lm_amadmix_mddprs_ptsd$fixef,10)
+round(lm_amadmix_mddprs_adhd$fixef,10) #14 cases, 477 controls
+round(lm_amadmix_mddprs_anxiety$fixef,10) #56 cases, 435 controls
+# round(lm_amadmix_mddprs_mdd$fixef,10) #50 cases, 441 controls
+# round(lm_amadmix_mddprs_ptsd$fixef,10) #11 cases, 480 controls
+
+### AIC for sex vs gender
+# sex: 279 male vs 212 female
+# gender: 282 cis male vs 204 cis female vs 5 gender diverse (not enough to use)
+
+### Results
+#total: no sig
+#ext: no sig
+#int: sex: beta = 1.148, se = 0.499, p = 0.022
+#agg: no sig
+#attn: no sig
+#anxdep: sex: beta = 0.559, se = 0.251, p = 0.026
+#rule: no sig
+#social: no sig
+#somatic: sex: beta = 0.625, se = 0.269, p = 0.020
+#thought: no sig
+#withdep: no sig
+#adhd: sex: beta = -0.815, se = 0.408, p = 0.046
+#anxiety: sex: beta = 0.505, se = 0.160, p = 0.00157
+#mdd: did not converge
+#ptsd: did not converge
+
+
 
 ```
 
