@@ -548,9 +548,10 @@ lm_eur_stressprs_ptsd$AIC
 
 
 ### adjusted p-values for PRS only
-p.adjust(c(lm_eur_stressprs_total$fixef$pval[2], #not sig
-           lm_eur_stressprs_ext$fixef$pval[2], #not sig
-           lm_eur_stressprs_int$fixef$pval[2], #not sig
+p.adjust(c(
+           # lm_eur_stressprs_total$fixef$pval[2], #not sig
+           # lm_eur_stressprs_ext$fixef$pval[2], #not sig
+           # lm_eur_stressprs_int$fixef$pval[2], #not sig
            lm_eur_stressprs_agg$fixef$pval[2], #not sig
            lm_eur_stressprs_attn$fixef$pval[2], #not sig
            lm_eur_stressprs_anxdep$fixef$pval[2], #not sig
@@ -566,9 +567,10 @@ p.adjust(c(lm_eur_stressprs_total$fixef$pval[2], #not sig
            method="fdr")
 
 ### adjusted p-values for sex only
-p.adjust(c(lm_eur_stressprs_total$fixef$pval[3], #not sig
-           lm_eur_stressprs_ext$fixef$pval[3], #not sig
-           lm_eur_stressprs_int$fixef$pval[3], #***sig
+p.adjust(c(
+           # lm_eur_stressprs_total$fixef$pval[3], #not sig
+           # lm_eur_stressprs_ext$fixef$pval[3], #not sig
+           # lm_eur_stressprs_int$fixef$pval[3], #***sig
            lm_eur_stressprs_agg$fixef$pval[3], #***sig
            lm_eur_stressprs_attn$fixef$pval[3], #not sig
            lm_eur_stressprs_anxdep$fixef$pval[3], #***sig
@@ -936,9 +938,10 @@ round(lm_afr_stressprs_ptsd$fixef,10) #10 cases, 507 controls
 #ptsd: no sig
 
 ### adjusted p-values for sex only
-p.adjust(c(lm_afr_stressprs_total$fixef$pval[3], #not sig
-           lm_afr_stressprs_ext$fixef$pval[3], #not sig
-           lm_afr_stressprs_int$fixef$pval[3], #not sig
+p.adjust(c(
+           # lm_afr_stressprs_total$fixef$pval[3], #not sig
+           # lm_afr_stressprs_ext$fixef$pval[3], #not sig
+           # lm_afr_stressprs_int$fixef$pval[3], #not sig
            lm_afr_stressprs_agg$fixef$pval[3], #not sig
            lm_afr_stressprs_attn$fixef$pval[3], #not sig
            lm_afr_stressprs_anxdep$fixef$pval[3], #not sig
@@ -1260,9 +1263,10 @@ round(lm_amadmix_stressprs_ptsd$fixef,10) #11 cases, 480 controls
 #ptsd: no sig
 
 ### adjusted p-values for prs only
-p.adjust(c(lm_amadmix_stressprs_total$fixef$pval[2], #not sig
-           lm_amadmix_stressprs_ext$fixef$pval[2], #not sig
-           lm_amadmix_stressprs_int$fixef$pval[2], #not sig
+p.adjust(c(
+           # lm_amadmix_stressprs_total$fixef$pval[2], #not sig
+           # lm_amadmix_stressprs_ext$fixef$pval[2], #not sig
+           # lm_amadmix_stressprs_int$fixef$pval[2], #not sig
            lm_amadmix_stressprs_agg$fixef$pval[2], #not sig
            lm_amadmix_stressprs_attn$fixef$pval[2], #not sig
            lm_amadmix_stressprs_anxdep$fixef$pval[2], #not sig
@@ -1272,15 +1276,16 @@ p.adjust(c(lm_amadmix_stressprs_total$fixef$pval[2], #not sig
            lm_amadmix_stressprs_thought$fixef$pval[2], #not sig
            lm_amadmix_stressprs_withdep$fixef$pval[2], #not sig
            lm_amadmix_stressprs_adhd$fixef$pval[2], #not sig
-           lm_amadmix_stressprs_anxiety$fixef$pval[2], #***sig
-           lm_amadmix_stressprs_mdd$fixef$pval[2], #***sig
+           lm_amadmix_stressprs_anxiety$fixef$pval[2], #not sig
+           lm_amadmix_stressprs_mdd$fixef$pval[2], #not sig
            lm_amadmix_stressprs_ptsd$fixef$pval[2]), #not sig
            method="fdr")
 
 ### adjusted p-values for sex only
-p.adjust(c(lm_amadmix_stressprs_total$fixef$pval[3], #not sig
-           lm_amadmix_stressprs_ext$fixef$pval[3], #not sig
-           lm_amadmix_stressprs_int$fixef$pval[3], #not sig
+p.adjust(c(
+           # lm_amadmix_stressprs_total$fixef$pval[3], #not sig
+           # lm_amadmix_stressprs_ext$fixef$pval[3], #not sig
+           # lm_amadmix_stressprs_int$fixef$pval[3], #not sig
            lm_amadmix_stressprs_agg$fixef$pval[3], #not sig
            lm_amadmix_stressprs_attn$fixef$pval[3], #not sig
            lm_amadmix_stressprs_anxdep$fixef$pval[3], #not sig
@@ -1297,9 +1302,10 @@ p.adjust(c(lm_amadmix_stressprs_total$fixef$pval[3], #not sig
 
 
 ### adjusted p-values for age only
-p.adjust(c(lm_amadmix_stressprs_total$fixef$pval[4], #not sig
-           lm_amadmix_stressprs_ext$fixef$pval[4], #not sig
-           lm_amadmix_stressprs_int$fixef$pval[4], #not sig
+p.adjust(c(
+           # lm_amadmix_stressprs_total$fixef$pval[4], #not sig
+           # lm_amadmix_stressprs_ext$fixef$pval[4], #not sig
+           # lm_amadmix_stressprs_int$fixef$pval[4], #not sig
            lm_amadmix_stressprs_agg$fixef$pval[4], #not sig
            lm_amadmix_stressprs_attn$fixef$pval[4], #not sig
            lm_amadmix_stressprs_anxdep$fixef$pval[4], #not sig
