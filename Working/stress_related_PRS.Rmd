@@ -15,6 +15,7 @@ setwd("C:/Users/Kate Scheuer/OneDrive - UW/Desktop/Lab/Second_year_ABCD_project/
 
 ```{r import data, load libraries, echo=FALSE}
 
+
 ### load libraries ####
 library(readxl)
 library(tidyverse)
@@ -27,37 +28,71 @@ library(moments)
 library(robustlmm)
 
 ### avoid scientific notation ####
-options(scipen=999) ## forces full display of results, all digits
+options(scipen = 999) ## forces full display of results, all digits
 # to change it back to scientific notation, use: options(scipen=0)
 
 
 ### import data ####
 
 ## ABCD data
-demo <- read.csv("abcd_p_demo.csv",header=T) # demographics
-meta <- read.csv("abcd_y_lt.csv",header=T) #site id, interview age
-cbcl <- read.csv("mh_p_cbcl.csv",header=T) # cbcl
-ksads_lifetime <- read.csv("ABCD_Baseline_T1_T2_T3_T4_KSADS_Lifetime_Diagnoses(in).csv") #lifetime ksads diagnoses
-le_p <- read.csv("mh_p_le.csv",header=T) #parent-reported life events scale
-le_y <- read.csv("mh_y_le.csv",header=T) #parent-reported life events scale
+demo <- read.csv("abcd_p_demo.csv", header = T) # demographics
+meta <- read.csv("abcd_y_lt.csv", header = T) #site id, interview age
+cbcl <- read.csv("mh_p_cbcl.csv", header = T) # cbcl
+ksads_lifetime <-
+  read.csv("ABCD_Baseline_T1_T2_T3_T4_KSADS_Lifetime_Diagnoses(in).csv") #lifetime ksads diagnoses
+le_p <-
+  read.csv("mh_p_le.csv", header = T) #parent-reported life events scale
+le_y <-
+  read.csv("mh_y_le.csv", header = T) #parent-reported life events scale
 
 ## federal poverty data from https://aspe.hhs.gov/topics/poverty-economic-mobility/poverty-guidelines
-poverty_info <- read.csv("federal_poverty_info.csv",header=T)
+poverty_info <- read.csv("federal_poverty_info.csv", header = T)
 
-## PRS 
-prs_stress <- read.table("StressPRS_w_MHC.profile",header=T) #include all snps in mhc
+## PRS
+prs_stress <-
+  read.table("Mendel_Rand_StressPRS.profile", header = T) #includes only snps linked to psych disorder via mendelian randomization (table S6 in Penner-Goeke 2023)
+prs_eur_mdd <-
+  read.table("renamed_scz_ABCD_imputed-MDD_EUR_HOWARD2019-EUR.profiles",
+             header = T)
+prs_afr_mdd <-
+  read.table("renamed_scz_ABCD_imputed-MDD_AFR_MENG2024-AFR.profiles",
+             header = T)
+prs_amadmix_mdd <-
+  read.table("renamed_scz_ABCD_imputed-MDD_HIS_MENG2024-AMR.profiles",
+             header = T)
+
+# prs_stress <- read.table("StressPRS_w_MHC.profile",header=T) #include all snps in mhc
 # prs_mdd <- read.table("MDD_PRS.profile",header=T)
 
-## genetic relatedness matrices (GRMs)
-all_grm <- readRDS(file = "ABCD_All_PCRel_grm_sparse.rda") # all ancestries
-afr_grm <- readRDS(file = "ABCD_Afr_PCRel_grm_sparse.rda") # african ancestry
-amadmix_grm <- readRDS(file = "ABCD_AmerAdmix_PCRel_grm_sparse.rda") # american admixed ancestry
-eur_grm <- readRDS(file = "ABCD_Eur_PCRel_grm_sparse.rda") # european ancestry
+## load grm with all participants
+all_grm <-
+  readRDS(file = "ABCD_All_PCRel_grm_sparse.rda") # all ancestries
+
+#if remove first 10 char from names in grm and prs files so just left with subject id
+rownames(all_grm) <- gsub("^.{1,10}", "", rownames(all_grm))
+colnames(all_grm) <- gsub("^.{1,10}", "", colnames(all_grm))
+prs_eur_mdd <-
+  prs_eur_mdd %>% mutate(src_subject_id = gsub("^.{1,10}", "", prs_eur_mdd$IID))
+prs_afr_mdd <-
+  prs_afr_mdd %>% mutate(src_subject_id = gsub("^.{1,10}", "", prs_afr_mdd$IID))
+prs_amadmix_mdd <-
+  prs_amadmix_mdd %>% mutate(src_subject_id = gsub("^.{1,10}", "", prs_amadmix_mdd$IID))
+
+#split grm with all participants into grm based on ancestry
+eur_grm <-
+  all_grm[rownames(all_grm) %in% prs_eur_mdd$src_subject_id,
+          colnames(all_grm) %in% prs_eur_mdd$src_subject_id]
+afr_grm <-
+  all_grm[rownames(all_grm) %in% prs_afr_mdd$src_subject_id,
+          colnames(all_grm) %in% prs_afr_mdd$src_subject_id]
+amadmix_grm <-
+  all_grm[rownames(all_grm) %in% prs_amadmix_mdd$src_subject_id,
+          colnames(all_grm) %in% prs_amadmix_mdd$src_subject_id]
 
 ## ancestry groupings
-afr_gp <- read_xlsx("ABCD_RF_Afr_Grouping.xlsx")
-amadmix_gp <- read_xlsx("ABCD_RF_AmerAdmix_Grouping.xlsx")
-eur_gp <- read_xlsx("ABCD_RF_Eur_Grouping.xlsx")
+# afr_gp <- read_xlsx("ABCD_RF_Afr_Grouping.xlsx")
+# amadmix_gp <- read_xlsx("ABCD_RF_AmerAdmix_Grouping.xlsx")
+# eur_gp <- read_xlsx("ABCD_RF_Eur_Grouping.xlsx")
 
 ```
 
@@ -288,17 +323,6 @@ eur_gp <- eur_gp %>% mutate(ancestry="Eur")
 ancestry_gp_all <- bind_rows(afr_gp,amadmix_gp,eur_gp) %>%
                       select("subjectkey","ancestry","V1","V2","V3","V4","V5","V6","V7","V8") %>%
                       rename(src_subject_id = subjectkey)
-
-# rename grms so names are consistent with abcd names
-#if remove first 10 char from rownames in grm then = subject id
-rownames(all_grm) <- gsub("^.{1,10}","",rownames(all_grm)) 
-colnames(all_grm) <- gsub("^.{1,10}","",colnames(all_grm))
-rownames(afr_grm) <- gsub("^.{1,10}","",rownames(afr_grm))
-colnames(afr_grm) <- gsub("^.{1,10}","",colnames(afr_grm))
-rownames(amadmix_grm) <- gsub("^.{1,10}","",rownames(amadmix_grm))
-colnames(amadmix_grm) <- gsub("^.{1,10}","",colnames(amadmix_grm))
-rownames(eur_grm) <- gsub("^.{1,10}","",rownames(eur_grm))
-colnames(eur_grm) <- gsub("^.{1,10}","",colnames(eur_grm))
 
 ### combine all data except grms ####
 data_all <- abcd_all %>%
